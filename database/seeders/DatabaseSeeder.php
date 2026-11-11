@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             MaterialSeeder::class,
             SirkulaDemoSeeder::class,
+            GamificationSeeder::class,
         ]);
     }
 }
