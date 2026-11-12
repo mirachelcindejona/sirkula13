@@ -2,14 +2,20 @@
 
 namespace Database\Seeders;
 
+use App\Support\EcoRank;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use RuntimeException;
 
 class SirkulaDemoSeeder extends Seeder
 {
     public function run(): void
     {
+        if (app()->environment('production')) {
+            throw new RuntimeException('SirkulaDemoSeeder hanya boleh dijalankan pada environment development atau testing.');
+        }
+
         DB::transaction(function (): void {
             $now = now();
             $ago = fn (int $days) => now()->subDays($days)->toDateTimeString();
@@ -19,35 +25,48 @@ class SirkulaDemoSeeder extends Seeder
              * Password "password" hanya untuk database development/demo.
              * ----------------------------------------------------------- */
             $accountRows = [
-                ['ref' => 'W-001', 'user_code' => 'W-001', 'name' => 'Ibu Sari Wulandari', 'phone' => '081234560001', 'role' => 'warga', 'status' => 'active'],
-                ['ref' => 'W-002', 'user_code' => 'W-002', 'name' => 'Bapak Budi Santoso', 'phone' => '081234560002', 'role' => 'warga', 'status' => 'active'],
-                ['ref' => 'W-003', 'user_code' => 'W-003', 'name' => 'Ibu Diah Lestari', 'phone' => '081234560003', 'role' => 'warga', 'status' => 'active'],
-                ['ref' => 'OP-001', 'user_code' => 'OP-001', 'name' => 'Pak Rudi — Operator', 'phone' => '081234560011', 'role' => 'operator-bank-sampah', 'status' => 'active'],
-                ['ref' => 'OP-002', 'user_code' => 'OP-002', 'name' => 'Bu Yanti — Operator', 'phone' => '081234560012', 'role' => 'operator-bank-sampah', 'status' => 'active'],
-                ['ref' => 'PK-001', 'user_code' => 'PK-001', 'name' => 'Teh Maya — Pengelola Kegiatan', 'phone' => '081234560021', 'role' => 'pengelola-kegiatan', 'status' => 'active'],
-                ['ref' => 'PK-002', 'user_code' => 'PK-002', 'name' => 'Bu Nisa — Pengelola Kegiatan', 'phone' => '081234560022', 'role' => 'pengelola-kegiatan', 'status' => 'active'],
-                ['ref' => 'BEN-001', 'user_code' => 'BEN-001', 'name' => 'Bu Lina — Bendahara', 'phone' => '081234560031', 'role' => 'bendahara', 'status' => 'active'],
-                ['ref' => 'ADM-001', 'user_code' => 'ADM-001', 'name' => 'Admin SIRKULA — Superadmin', 'phone' => '081234560041', 'role' => 'superadmin', 'status' => 'active'],
-                ['ref' => 'PEND-001', 'user_code' => null, 'name' => 'Rina Apriliyani', 'phone' => '081234560051', 'role' => 'warga', 'status' => 'pending'],
-                ['ref' => 'PEND-002', 'user_code' => null, 'name' => 'Deni Kurniawan', 'phone' => '081234560052', 'role' => 'warga', 'status' => 'needs_info'],
+                ['ref' => 'W-001', 'user_code' => 'W-001', 'name' => 'Ibu Sari Wulandari', 'email' => 'sari@sirkula.test', 'phone' => '081234560001', 'role' => 'warga', 'status' => 'active'],
+                ['ref' => 'W-002', 'user_code' => 'W-002', 'name' => 'Bapak Budi Santoso', 'email' => 'budi@sirkula.test', 'phone' => '081234560002', 'role' => 'warga', 'status' => 'active'],
+                ['ref' => 'W-003', 'user_code' => 'W-003', 'name' => 'Ibu Diah Lestari', 'email' => 'diah@sirkula.test', 'phone' => '081234560003', 'role' => 'warga', 'status' => 'active'],
+                ['ref' => 'OP-001', 'user_code' => 'OP-001', 'name' => 'Pak Rudi — Operator', 'email' => 'rudi@sirkula.test', 'phone' => '081234560011', 'role' => 'operator-bank-sampah', 'status' => 'active'],
+                ['ref' => 'OP-002', 'user_code' => 'OP-002', 'name' => 'Bu Yanti — Operator', 'email' => 'yanti@sirkula.test', 'phone' => '081234560012', 'role' => 'operator-bank-sampah', 'status' => 'active'],
+                ['ref' => 'PK-001', 'user_code' => 'PK-001', 'name' => 'Teh Maya — Pengelola Kegiatan', 'email' => 'maya@sirkula.test', 'phone' => '081234560021', 'role' => 'pengelola-kegiatan', 'status' => 'active'],
+                ['ref' => 'PK-002', 'user_code' => 'PK-002', 'name' => 'Bu Nisa — Pengelola Kegiatan', 'email' => 'nisa@sirkula.test', 'phone' => '081234560022', 'role' => 'pengelola-kegiatan', 'status' => 'active'],
+                ['ref' => 'BEN-001', 'user_code' => 'BEN-001', 'name' => 'Bu Lina — Bendahara', 'email' => 'lina@sirkula.test', 'phone' => '081234560031', 'role' => 'bendahara', 'status' => 'active'],
+                ['ref' => 'ADM-001', 'user_code' => 'ADM-001', 'name' => 'Admin SIRKULA — Superadmin', 'email' => 'admin@sirkula.test', 'phone' => '081234560041', 'role' => 'superadmin', 'status' => 'active'],
+                ['ref' => 'PEND-001', 'user_code' => null, 'name' => 'Rina Apriliyani', 'email' => 'rina@sirkula.test', 'phone' => '081234560051', 'role' => 'warga', 'status' => 'pending'],
+                ['ref' => 'PEND-002', 'user_code' => null, 'name' => 'Deni Kurniawan', 'email' => 'deni@sirkula.test', 'phone' => '081234560052', 'role' => 'warga', 'status' => 'needs_info'],
             ];
+
+            foreach ($accountRows as $account) {
+                if (empty($account['email']) || ! filter_var($account['email'], FILTER_VALIDATE_EMAIL)) {
+                    throw new RuntimeException('Setiap akun demo wajib memiliki alamat email valid: '.($account['ref'] ?? 'akun tanpa kode'));
+                }
+            }
 
             $users = [];
             foreach ($accountRows as $account) {
+                $userData = [
+                    'user_code' => $account['user_code'],
+                    'name' => $account['name'],
+                    // Prototype memakai 123456 bila akun demo belum punya kata sandi sendiri.
+                    'password' => Hash::make('123456'),
+                    'status' => $account['status'],
+                    'login_enabled' => true,
+                    'updated_at' => $now,
+                    'created_at' => $now,
+                    'email' => $account['email'],
+                    'email_verified_at' => null,
+                ];
+
                 DB::table('users')->updateOrInsert(
                     ['phone' => $account['phone']],
-                    [
-                        'user_code' => $account['user_code'],
-                        'name' => $account['name'],
-                        'email' => null,
-                        'password' => Hash::make('password'),
-                        'status' => $account['status'],
-                        'login_enabled' => true,
-                        'updated_at' => $now,
-                        'created_at' => $now,
-                    ]
+                    $userData
                 );
-                $users[$account['ref']] = DB::table('users')->where('phone', $account['phone'])->value('id');
+
+                $users[$account['ref']] = DB::table('users')
+                    ->where('phone', $account['phone'])
+                    ->value('id');
             }
 
             $roleIds = DB::table('roles')->pluck('id', 'slug')->all();
@@ -59,11 +78,11 @@ class SirkulaDemoSeeder extends Seeder
             }
 
             $residentRows = [
-                ['ref' => 'W-001', 'code' => 'W-001', 'name' => 'Ibu Sari Wulandari', 'phone' => '081234560001', 'rt' => '03', 'household' => 'Keluarga Wulandari', 'display' => 'Sari W.', 'status' => 'active', 'review_note' => null],
-                ['ref' => 'W-002', 'code' => 'W-002', 'name' => 'Bapak Budi Santoso', 'phone' => '081234560002', 'rt' => '02', 'household' => 'Keluarga Santoso', 'display' => 'Budi S.', 'status' => 'active', 'review_note' => null],
-                ['ref' => 'W-003', 'code' => 'W-003', 'name' => 'Ibu Diah Lestari', 'phone' => '081234560003', 'rt' => '04', 'household' => 'Keluarga Lestari', 'display' => 'Diah L.', 'status' => 'active', 'review_note' => null],
-                ['ref' => 'PEND-001', 'code' => null, 'name' => 'Rina Apriliyani', 'phone' => '081234560051', 'rt' => '03', 'household' => 'Keluarga Apriliyani', 'display' => 'Rina A.', 'status' => 'pending', 'review_note' => null],
-                ['ref' => 'PEND-002', 'code' => null, 'name' => 'Deni Kurniawan', 'phone' => '081234560052', 'rt' => '02', 'household' => 'Keluarga Kurniawan', 'display' => 'Deni K.', 'status' => 'needs_info', 'review_note' => 'Mohon konfirmasi alamat RT dan nomor kontak.'],
+                ['ref' => 'W-001', 'code' => 'W-001', 'name' => 'Ibu Sari Wulandari', 'phone' => '081234560001', 'rt' => '03', 'house_number' => '12A', 'household' => 'Keluarga Wulandari', 'display' => 'Sari W.', 'status' => 'active', 'review_note' => null],
+                ['ref' => 'W-002', 'code' => 'W-002', 'name' => 'Bapak Budi Santoso', 'phone' => '081234560002', 'rt' => '02', 'house_number' => null, 'household' => 'Keluarga Santoso', 'display' => 'Budi S.', 'status' => 'active', 'review_note' => null],
+                ['ref' => 'W-003', 'code' => 'W-003', 'name' => 'Ibu Diah Lestari', 'phone' => '081234560003', 'rt' => '04', 'house_number' => null, 'household' => 'Keluarga Lestari', 'display' => 'Diah L.', 'status' => 'active', 'review_note' => null],
+                ['ref' => 'PEND-001', 'code' => null, 'name' => 'Rina Apriliyani', 'phone' => '081234560051', 'rt' => '03', 'house_number' => null, 'household' => 'Keluarga Apriliyani', 'display' => 'Rina A.', 'status' => 'pending', 'review_note' => null],
+                ['ref' => 'PEND-002', 'code' => null, 'name' => 'Deni Kurniawan', 'phone' => '081234560052', 'rt' => '02', 'house_number' => null, 'household' => 'Keluarga Kurniawan', 'display' => 'Deni K.', 'status' => 'needs_info', 'review_note' => 'Mohon konfirmasi alamat RT dan nomor kontak.'],
             ];
 
             $residents = [];
@@ -76,10 +95,11 @@ class SirkulaDemoSeeder extends Seeder
                         'full_name' => $resident['name'],
                         'phone' => $resident['phone'],
                         'rt' => $resident['rt'],
-                        'house_number' => null,
+                        'house_number' => $resident['house_number'],
                         'household_name' => $resident['household'],
                         'display_name' => $resident['display'],
                         'leaderboard_visible' => true,
+                        'donor_display' => 'alias',
                         'status' => $resident['status'],
                         'created_by' => null,
                         'approved_by' => null,
@@ -107,9 +127,13 @@ class SirkulaDemoSeeder extends Seeder
             ];
 
             $deposits = [];
-            $pointsPerKg = ['kardus' => 50, 'pet_bening' => 80, 'pet_warna' => 60, 'galon' => 70, 'aluminium' => 120, 'besi' => 50, 'plastik_keras' => 40];
+            $sellPoints = ['kardus' => 50, 'pet_bening' => 80, 'pet_warna' => 60, 'galon' => 70, 'aluminium' => 120, 'besi' => 50, 'plastik_keras' => 40];
+            $donatePoints = ['kardus' => 75, 'pet_bening' => 120, 'pet_warna' => 90, 'galon' => 105, 'aluminium' => 180, 'besi' => 75, 'plastik_keras' => 60];
             foreach ($depositRows as $row) {
                 $createdAt = $ago($row['days']);
+                $pointsPerKg = $row['type'] === 'donation'
+                    ? $donatePoints[$row['material']]
+                    : $sellPoints[$row['material']];
                 DB::table('deposits')->updateOrInsert(
                     ['reference_code' => $row['ref']],
                     [
@@ -122,7 +146,7 @@ class SirkulaDemoSeeder extends Seeder
                         'price_per_kg_snapshot' => $row['price'],
                         'price_effective_date_snapshot' => '2026-10-01',
                         'price_official_at_creation' => true,
-                        'eco_points_per_kg_snapshot' => $pointsPerKg[$row['material']],
+                        'eco_points_per_kg_snapshot' => $pointsPerKg,
                         'donation_multiplier_snapshot' => 1.50,
                         'money_amount' => $row['amount'],
                         'eco_points_awarded' => $row['points'],
@@ -399,8 +423,8 @@ class SirkulaDemoSeeder extends Seeder
             );
 
             $expenseRows = [
-                ['ref' => 'EXP-HIST-01', 'category' => 'Pembelian reward', 'amount' => 100000, 'description' => 'Pengadaan reward', 'proof' => 'BUKTI-EXP-001', 'status' => 'paid', 'created_by' => 'BEN-001', 'approved_by' => null, 'paid_by' => 'BEN-001', 'days' => 5],
-                ['ref' => 'EXP-2601', 'category' => 'Pemeliharaan tempat pemilahan', 'amount' => 75000, 'description' => 'Pembelian kantong sortir dan perlengkapan kebersihan', 'proof' => 'NOTA-2601', 'status' => 'awaiting_approval', 'created_by' => 'BEN-001', 'approved_by' => null, 'paid_by' => null, 'days' => 1],
+                ['ref' => 'EXP-HIST-01', 'category' => 'Pembelian reward', 'amount' => 100000, 'description' => 'Pengadaan reward', 'proof' => 'BUKTI-EXP-001', 'external_reference' => null, 'status' => 'paid', 'created_by' => 'BEN-001', 'approved_by' => null, 'paid_by' => 'BEN-001', 'days' => 5],
+                ['ref' => 'EXP-2601', 'category' => 'Pemeliharaan tempat pemilahan', 'amount' => 75000, 'description' => 'Pembelian kantong sortir dan perlengkapan kebersihan', 'proof' => 'NOTA-2601', 'external_reference' => 'INV-2601', 'status' => 'awaiting_approval', 'created_by' => 'BEN-001', 'approved_by' => null, 'paid_by' => null, 'days' => 1],
             ];
             $expenses = [];
             foreach ($expenseRows as $row) {
@@ -409,7 +433,7 @@ class SirkulaDemoSeeder extends Seeder
                     ['reference_code' => $row['ref']],
                     [
                         'category' => $row['category'], 'amount' => $row['amount'], 'description' => $row['description'],
-                        'proof_reference' => $row['proof'], 'status' => $row['status'],
+                        'proof_reference' => $row['proof'], 'external_reference' => $row['external_reference'], 'status' => $row['status'],
                         'created_by' => $users[$row['created_by']],
                         'approved_by' => $row['approved_by'] ? $users[$row['approved_by']] : null,
                         'paid_by' => $row['paid_by'] ? $users[$row['paid_by']] : null,
@@ -465,23 +489,23 @@ class SirkulaDemoSeeder extends Seeder
                 ['resident' => 'W-001', 'points' => 60, 'description' => 'Setoran PET berwarna 1 kg', 'ref' => 'HIST-01', 'days' => 13],
                 ['resident' => 'W-001', 'points' => 105, 'description' => 'Donasi galon 1 kg', 'ref' => 'HIST-02', 'days' => 12],
                 ['resident' => 'W-001', 'points' => 120, 'description' => 'Setoran kaleng aluminium 1 kg', 'ref' => 'HIST-03', 'days' => 11],
-                ['resident' => 'W-001', 'points' => 50, 'description' => 'Kehadiran kegiatan RW', 'ref' => 'EV-H1', 'days' => 10],
-                ['resident' => 'W-001', 'points' => 50, 'description' => 'Kehadiran kegiatan RW', 'ref' => 'EV-H2', 'days' => 9],
-                ['resident' => 'W-001', 'points' => 50, 'description' => 'Kehadiran kegiatan RW', 'ref' => 'EV-H3', 'days' => 8],
-                ['resident' => 'W-001', 'points' => 50, 'description' => 'Kehadiran kegiatan RW', 'ref' => 'EV-H4', 'days' => 7],
-                ['resident' => 'W-001', 'points' => 50, 'description' => 'Kehadiran kegiatan RW', 'ref' => 'EV-H5', 'days' => 6],
-                ['resident' => 'W-001', 'points' => 50, 'description' => 'Tugas tambahan relawan', 'ref' => 'TASK-H1', 'days' => 11],
-                ['resident' => 'W-001', 'points' => 50, 'description' => 'Tugas tambahan relawan', 'ref' => 'TASK-H2', 'days' => 10],
-                ['resident' => 'W-001', 'points' => 30, 'description' => 'Materi edukasi selesai', 'ref' => 'EDU-H1', 'days' => 10],
-                ['resident' => 'W-001', 'points' => 30, 'description' => 'Materi edukasi selesai', 'ref' => 'EDU-H2', 'days' => 9],
-                ['resident' => 'W-001', 'points' => 30, 'description' => 'Materi edukasi selesai', 'ref' => 'EDU-H3', 'days' => 8],
-                ['resident' => 'W-001', 'points' => 30, 'description' => 'Materi edukasi selesai', 'ref' => 'EDU-H4', 'days' => 7],
-                ['resident' => 'W-001', 'points' => 30, 'description' => 'Materi edukasi selesai', 'ref' => 'EDU-H5', 'days' => 6],
-                ['resident' => 'W-001', 'points' => 50, 'description' => 'Berhasil menjual produk pemanfaatan', 'ref' => 'PROD-S1', 'days' => 8],
-                ['resident' => 'W-001', 'points' => 50, 'description' => 'Berhasil menjual produk pemanfaatan', 'ref' => 'PROD-S2', 'days' => 7],
-                ['resident' => 'W-001', 'points' => 50, 'description' => 'Berhasil menjual produk pemanfaatan', 'ref' => 'PROD-S3', 'days' => 6],
-                ['resident' => 'W-001', 'points' => 30, 'description' => 'Membeli produk pemanfaatan', 'ref' => 'PROD-B1', 'days' => 6],
-                ['resident' => 'W-001', 'points' => 30, 'description' => 'Membeli produk pemanfaatan', 'ref' => 'PROD-B2', 'days' => 5],
+                ['resident' => 'W-001', 'points' => 50, 'description' => 'Kehadiran kegiatan RW', 'ref' => 'EV-H1', 'days' => 13],
+                ['resident' => 'W-001', 'points' => 50, 'description' => 'Kehadiran kegiatan RW', 'ref' => 'EV-H2', 'days' => 12],
+                ['resident' => 'W-001', 'points' => 50, 'description' => 'Kehadiran kegiatan RW', 'ref' => 'EV-H3', 'days' => 11],
+                ['resident' => 'W-001', 'points' => 50, 'description' => 'Kehadiran kegiatan RW', 'ref' => 'EV-H4', 'days' => 10],
+                ['resident' => 'W-001', 'points' => 50, 'description' => 'Kehadiran kegiatan RW', 'ref' => 'EV-H5', 'days' => 9],
+                ['resident' => 'W-001', 'points' => 50, 'description' => 'Tugas tambahan relawan', 'ref' => 'TASK-H1', 'days' => 10],
+                ['resident' => 'W-001', 'points' => 50, 'description' => 'Tugas tambahan relawan', 'ref' => 'TASK-H2', 'days' => 9],
+                ['resident' => 'W-001', 'points' => 30, 'description' => 'Materi edukasi selesai', 'ref' => 'EDU-H1', 'days' => 9],
+                ['resident' => 'W-001', 'points' => 30, 'description' => 'Materi edukasi selesai', 'ref' => 'EDU-H2', 'days' => 8],
+                ['resident' => 'W-001', 'points' => 30, 'description' => 'Materi edukasi selesai', 'ref' => 'EDU-H3', 'days' => 7],
+                ['resident' => 'W-001', 'points' => 30, 'description' => 'Materi edukasi selesai', 'ref' => 'EDU-H4', 'days' => 6],
+                ['resident' => 'W-001', 'points' => 30, 'description' => 'Materi edukasi selesai', 'ref' => 'EDU-H5', 'days' => 5],
+                ['resident' => 'W-001', 'points' => 50, 'description' => 'Berhasil menjual produk pemanfaatan', 'ref' => 'PROD-S1', 'days' => 7],
+                ['resident' => 'W-001', 'points' => 50, 'description' => 'Berhasil menjual produk pemanfaatan', 'ref' => 'PROD-S2', 'days' => 6],
+                ['resident' => 'W-001', 'points' => 50, 'description' => 'Berhasil menjual produk pemanfaatan', 'ref' => 'PROD-S3', 'days' => 5],
+                ['resident' => 'W-001', 'points' => 30, 'description' => 'Membeli produk pemanfaatan', 'ref' => 'PROD-B1', 'days' => 5],
+                ['resident' => 'W-001', 'points' => 30, 'description' => 'Membeli produk pemanfaatan', 'ref' => 'PROD-B2', 'days' => 4],
                 ['resident' => 'W-001', 'points' => 75, 'description' => 'Donasi kardus 1 kg', 'ref' => 'HIST-04', 'days' => 4],
                 ['resident' => 'W-001', 'points' => 30, 'description' => 'Setoran PET berwarna 0,5 kg', 'ref' => 'HIST-05', 'days' => 3],
                 ['resident' => 'W-001', 'points' => 40, 'description' => 'Setoran PET bening 0,5 kg', 'ref' => 'HIST-06', 'days' => 2],
@@ -556,6 +580,16 @@ class SirkulaDemoSeeder extends Seeder
                 ['key' => 'rounding', 'group' => 'points', 'value' => 'nearest-half-up'],
                 ['key' => 'leaderboardDefault', 'group' => 'privacy', 'value' => 'alias'],
                 ['key' => 'backupCadence', 'group' => 'backup', 'value' => 'Belum ditetapkan'],
+                ['key' => 'priceEffectiveDate', 'group' => 'tariff', 'value' => '2026-10-30'],
+                ['key' => 'priceOfficial', 'group' => 'tariff', 'value' => false],
+                ['key' => 'reservedOfflineIds', 'group' => 'import', 'value' => ['OFF-HIST-001']],
+                ['key' => 'rankThresholds', 'group' => 'points', 'value' => EcoRank::tiers()],
+                ['key' => 'educationPoints', 'group' => 'points', 'value' => 30],
+                ['key' => 'attendancePoints', 'group' => 'points', 'value' => 50],
+                ['key' => 'volunteerPoints', 'group' => 'points', 'value' => 50],
+                ['key' => 'productSalePoints', 'group' => 'points', 'value' => 50],
+                ['key' => 'productPurchasePoints', 'group' => 'points', 'value' => 30],
+                ['key' => 'supportPointsPerThousand', 'group' => 'points', 'value' => 1],
             ];
             foreach ($settings as $setting) {
                 DB::table('app_settings')->updateOrInsert(

@@ -26,6 +26,7 @@ return new class extends Migration
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('approved_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('published_at')->nullable();
+            $table->text('review_note')->nullable();
             $table->timestamps();
             $table->index(['status', 'event_date'], 'events_public_date_idx');
         });

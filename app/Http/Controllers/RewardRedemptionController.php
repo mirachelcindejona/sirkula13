@@ -1,89 +1,89 @@
+<?php
+
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Models\User;
 use App\Models\Reward;
 use App\Models\RewardRedemption;
-use App\Models\PointTransaction;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class RewardRedemptionController extends Controller
 {
     /**
-     * Proses penukaran reward oleh warga.
+     * Memesan reward. Poin dan stok hanya direservasi sampai petugas
+     * menyelesaikan serah terima.
      */
-    public function redeem(Request $request)
+    public function redeem(Request $request): JsonResponse|RedirectResponse
     {
-        // Validasi input
-        $request->validate([
-            'user_id' => 'required|exists:users,id',
+        $validated = $request->validate([
             'reward_id' => 'required|exists:rewards,id',
         ]);
 
-        $user = User::findOrFail($request->user_id);
-        $reward = Reward::findOrFail($request->reward_id);
+        $user = $request->user()->load('residentProfile');
+        $profile = $user->residentProfile;
+        $reward = Reward::query()->findOrFail($validated['reward_id']);
 
-        // 1. Cek apakah stok reward masih tersedia
-        if ($reward->stock <= 0) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Maaf, stok reward ini sudah habis.'
-            ], 400);
+        if ($profile === null || $profile->status !== 'active') {
+            return $this->fail($request, 'Hanya warga yang sudah disetujui yang dapat menukar reward.', 422);
         }
 
-        // 2. Cek apakah poin warga mencukupi
-        if ($user->points < $reward->points_cost) {
-            return response()->json([
-                'success' => false,
-                'message' => 'EcoPoints kamu tidak mencukupi untuk menukar reward ini.'
-            ], 400);
+        if (! $reward->is_active || $reward->availableStock() <= 0) {
+            return $this->fail($request, 'Maaf, stok reward ini sudah habis.', 400);
         }
 
-        // Gunakan Database Transaction untuk keamanan data
-        DB::beginTransaction();
+        if ($profile->availablePoints() < $reward->points_required) {
+            return $this->fail($request, 'EcoPoints kamu tidak mencukupi untuk menukar reward ini.', 400);
+        }
+
         try {
-            // A. Kurangi poin warga
-            $user->points -= $reward->points_cost;
-            $user->save();
+            $redemption = DB::transaction(function () use ($profile, $reward, $request): RewardRedemption {
+            $locked = Reward::query()->whereKey($reward->id)->lockForUpdate()->firstOrFail();
 
-            // B. Catat riwayat penukaran ke tabel reward_redemptions
-            $redemption = RewardRedemption::create([
-                'user_id' => $user->id,
-                'reward_id' => $reward->id,
-                'status' => 'pending', // Status awal, bisa 'completed' atau 'approved' sesuai alur aplikasi
-                'redeemed_at' => now(),
+            if ($locked->availableStock() <= 0 || $profile->availablePoints() < $locked->points_required) {
+                throw new \RuntimeException('Saldo atau stok berubah. Silakan periksa lalu coba kembali.');
+            }
+
+            return RewardRedemption::query()->create([
+                'reference_code' => 'RED-'.now()->format('ymdHis').'-'.Str::upper(Str::random(4)),
+                'reward_id' => $locked->id,
+                'resident_profile_id' => $profile->id,
+                'points_cost' => $locked->points_required,
+                'status' => 'pending_pickup',
+                'created_by' => $request->user()->id,
             ]);
+            });
+        } catch (\RuntimeException $exception) {
+            return $this->fail($request, $exception->getMessage(), 409);
+        }
 
-            // C. Catat pengeluaran poin ke tabel point_transactions (nilai points minus)
-            PointTransaction::create([
-                'user_id' => $user->id,
-                'points' => -$reward->points_cost,
-                'xp' => 0, // Penukaran reward tidak menambah XP
-                'description' => 'Penukaran reward: ' . $reward->name,
-            ]);
+        $profile->refresh();
+        $message = 'Reward berhasil dipesan. Poin dan stok ditahan sampai barang diserahkan.';
 
-            // D. Kurangi stok reward
-            $reward->stock -= 1;
-            $reward->save();
-
-            DB::commit();
-
+        if ($request->expectsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => 'Reward berhasil ditukar! Silakan cek status penukaran kamu.',
+                'message' => $message,
                 'data' => [
-                    'remaining_points' => $user->points,
+                    'remaining_points' => $profile->availablePoints(),
                     'reward_name' => $reward->name,
                     'redemption_id' => $redemption->id,
-                ]
-            ], 200);
-
-        } catch (\Exception $e) {
-            DB::rollback();
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan saat memproses penukaran: ' . $e->getMessage()
-            ], 500);
+                    'status' => $redemption->status,
+                ],
+            ]);
         }
+
+        return redirect()->route('citizen.points')->with('success', $message);
+    }
+
+    private function fail(Request $request, string $message, int $status): JsonResponse|RedirectResponse
+    {
+        if ($request->expectsJson()) {
+            return response()->json(['success' => false, 'message' => $message], $status);
+        }
+
+        return back()->with('error', $message);
     }
 }

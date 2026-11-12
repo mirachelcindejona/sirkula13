@@ -34,6 +34,9 @@ return new class extends Migration
             $table->timestamp('verified_at')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamp('completed_at')->nullable();
+            $table->foreignId('cancelled_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('cancelled_at')->nullable();
+            $table->text('cancel_reason')->nullable();
             $table->timestamps();
             $table->index(['buyer_profile_id', 'created_at'], 'product_order_buyer_date_idx');
             $table->index(['seller_profile_id', 'created_at'], 'product_order_seller_date_idx');

@@ -176,4 +176,56 @@
     .badge-danger {
         @apply inline-flex items-center rounded-full bg-danger-soft px-2.5 py-1 text-xs font-bold text-danger;
     }
+
+    .badge-info {
+        @apply inline-flex items-center rounded-full bg-info-soft px-2.5 py-1 text-xs font-bold text-info;
+    }
+
+    .badge-neutral {
+        @apply inline-flex items-center rounded-full bg-primary-50 px-2.5 py-1 text-xs font-bold text-muted;
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .btn-outline,
+    .btn-accent,
+    .btn-danger {
+        text-decoration: none;
+    }
+
+    .nav-link {
+        @apply flex min-h-11 items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-semibold text-[#3d4334] no-underline;
+    }
+
+    .nav-link:hover {
+        @apply bg-primary-100 text-ink;
+    }
+
+    .nav-link-active {
+        @apply bg-primary-500 font-extrabold text-white;
+    }
+
+    .nav-link-active:hover {
+        @apply bg-primary-600 text-white;
+    }
+
+    .kpi-value {
+        @apply font-sans text-3xl font-extrabold tracking-tight text-[#26331a] tabular-nums;
+    }
+
+    .kpi-label {
+        @apply text-xs font-extrabold tracking-wide text-muted uppercase;
+    }
+
+    .data-table {
+        @apply w-full min-w-[680px] border-collapse text-left text-sm;
+    }
+
+    .data-table th {
+        @apply border-b border-line px-3 py-3 text-xs font-extrabold tracking-wide text-muted uppercase;
+    }
+
+    .data-table td {
+        @apply border-b border-line px-3 py-3 align-middle;
+    }
 }

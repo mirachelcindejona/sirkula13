@@ -60,7 +60,7 @@ class MaterialController extends Controller
         Material::create($request->validated());
 
         return redirect()
-            ->route('bank-sampah.materials.index')
+            ->route('admin.materials.index')
             ->with('success', 'Material berhasil ditambahkan.');
     }
 
@@ -85,7 +85,7 @@ class MaterialController extends Controller
         $material->update($request->validated());
 
         return redirect()
-            ->route('bank-sampah.materials.index')
+            ->route('admin.materials.index')
             ->with('success', 'Material berhasil diperbarui.');
     }
 
@@ -101,7 +101,7 @@ class MaterialController extends Controller
         $status = $material->is_active ? 'diaktifkan' : 'dinonaktifkan';
 
         return redirect()
-            ->route('bank-sampah.materials.index')
+            ->route('admin.materials.index')
             ->with('success', "Material berhasil {$status}.");
     }
 }

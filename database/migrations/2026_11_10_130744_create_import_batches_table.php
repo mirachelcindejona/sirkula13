@@ -20,6 +20,8 @@ return new class extends Migration
             $table->unsignedInteger('error_rows')->default(0);
             $table->foreignId('uploaded_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('reviewed_at')->nullable();
+            $table->text('review_note')->nullable();
             $table->timestamp('imported_at')->nullable();
             $table->timestamps();
         });

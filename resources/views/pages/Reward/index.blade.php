@@ -23,7 +23,7 @@
                         </div>
                         <div class="text-end">
                             <span class="fs-5">Saldo EcoPoints:</span>
-                            <h2 class="fw-bold mb-0 text-warning" id="user-points">{{ $user->points ?? 0 }} Points</h2>
+                            <h2 class="fw-bold mb-0 text-warning" id="user-points">{{ $availablePoints ?? 0 }} Points</h2>
                         </div>
                     </div>
                 </div>
@@ -39,11 +39,11 @@
             @forelse($rewards as $reward)
                 <div class="col-md-4 mb-4">
                     <div class="card h-100 shadow-sm border-0">
-                        @if($reward->image)
-                            <img src="{{ asset('storage/' . $reward->image) }}" class="card-img-top" alt="{{ $reward->name }}" style="height: 200px; object-fit: cover;">
+                        @if($reward->image_path)
+                            <img src="{{ asset('storage/' . $reward->image_path) }}" class="card-img-top" alt="{{ $reward->name }}" style="height: 200px; object-fit: cover;">
                         @else
                             <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">
-                                <span>No Image Available</span>
+                                <span style="font-size: 3rem;">{{ $reward->icon ?: '🎁' }}</span>
                             </div>
                         @endif
                         <div class="card-body d-flex flex-column">
@@ -51,12 +51,12 @@
                             <p class="card-text text-muted small">{{ $reward->description }}</p>
                             <div class="mt-auto">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <span class="badge bg-warning text-dark fs-6">{{ $reward->points_cost }} Poin</span>
-                                    <span class="text-muted small">Stok: {{ $reward->stock }}</span>
+                                    <span class="badge bg-warning text-dark fs-6">{{ $reward->points_required }} Poin</span>
+                                    <span class="text-muted small">Stok: {{ $reward->availableStock() }}</span>
                                 </div>
-                                <button class="btn btn-outline-success w-100 redeem-btn"
+                                <button class="btn btn outline-success w-100 redeem-btn"
                                         data-reward-id="{{ $reward->id }}"
-                                        data-reward-cost="{{ $reward->points_cost }}">
+                                        data-reward-cost="{{ $reward->points_required }}">
                                     Tukar Reward
                                 </button>
                             </div>

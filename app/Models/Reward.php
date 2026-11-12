@@ -3,30 +3,39 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Reward extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
-        'title',
+        'code',
+        'name',
         'description',
         'points_required',
         'stock',
-        'image',
+        'image_path',
+        'icon',
         'is_active',
     ];
 
-    protected $casts = [
-        'is_active' => 'boolean',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+            'points_required' => 'integer',
+            'stock' => 'integer',
+        ];
+    }
 
-    /**
-     * Relasi: Reward bisa diklaim dalam banyak transaksi penukaran (Redemption).
-     */
-    public function redemptions()
+    public function redemptions(): HasMany
     {
         return $this->hasMany(RewardRedemption::class);
     }
-    //
+
+    public function availableStock(): int
+    {
+        $reserved = $this->redemptions()->where('status', 'pending_pickup')->count();
+
+        return max(0, $this->stock - $reserved);
+    }
 }

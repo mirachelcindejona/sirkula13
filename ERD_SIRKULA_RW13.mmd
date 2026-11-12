@@ -1,0 +1,553 @@
+%% ERD SIRKULA RW13 - satu diagram utuh dalam satu file.
+%% Seluruh tabel dan relasi menggunakan nama tabel database yang sebenarnya.
+erDiagram
+    USERS ||--o{ ROLE_USER : memiliki_role
+    ROLES ||--o{ ROLE_USER : diterapkan_pada
+    USERS o|--o| RESIDENT_PROFILES : akun_warga
+    USERS o|--o{ RESIDENT_PROFILES : membuat_profil
+    USERS o|--o{ RESIDENT_PROFILES : menyetujui_profil
+    MATERIALS ||--o{ MATERIAL_RATES : memiliki_tarif
+    MATERIALS ||--o{ DEPOSITS : jenis_material
+    MATERIAL_RATES o|--o{ DEPOSITS : tarif_snapshot
+    RESIDENT_PROFILES o|--o{ DEPOSITS : melakukan_setoran
+    USERS o|--o{ DEPOSITS : mencatat_setoran
+    USERS o|--o{ DEPOSITS : memverifikasi_setoran
+    DEPOSITS ||--o| PAYOUTS : pembayaran_setoran
+    RESIDENT_PROFILES ||--o{ PAYOUTS : menerima_pembayaran
+    USERS o|--o{ PAYOUTS : memproses_pembayaran
+    MATERIALS ||--o{ MATERIAL_OUTFLOWS : material_keluar
+    USERS o|--o{ MATERIAL_OUTFLOWS : mencatat_material_keluar
+    USERS o|--o{ MATERIAL_OUTFLOWS : memeriksa_penerimaan
+    RESIDENT_PROFILES ||--o{ ECO_POINT_TRANSACTIONS : memiliki_riwayat_poin
+    USERS o|--o{ ECO_POINT_TRANSACTIONS : mencatat_poin
+    EVENTS ||--o{ EVENT_REGISTRATIONS : memiliki_pendaftar
+    RESIDENT_PROFILES ||--o{ EVENT_REGISTRATIONS : mendaftar
+    EVENTS ||--o{ EVENT_ATTENDANCES : memiliki_kehadiran
+    RESIDENT_PROFILES ||--o{ EVENT_ATTENDANCES : hadir
+    USERS o|--o{ EVENT_ATTENDANCES : mencatat_kehadiran
+    USERS o|--o{ EVENT_ATTENDANCES : memverifikasi_kehadiran
+    EVENTS o|--o{ VOLUNTEER_TASKS : memiliki_tugas
+    RESIDENT_PROFILES ||--o{ VOLUNTEER_TASKS : mengerjakan_tugas
+    USERS o|--o{ VOLUNTEER_TASKS : memverifikasi_tugas
+    EDUCATION_MATERIALS ||--o{ EDUCATION_COMPLETIONS : memiliki_penyelesaian
+    RESIDENT_PROFILES ||--o{ EDUCATION_COMPLETIONS : menyelesaikan_materi
+    RESIDENT_PROFILES o|--o{ PRODUCTS : menjadi_penjual
+    USERS o|--o{ PRODUCTS : membuat_produk
+    USERS o|--o{ PRODUCTS : menyetujui_produk
+    PRODUCTS ||--o{ PRODUCT_ORDERS : dipesan
+    RESIDENT_PROFILES o|--o{ PRODUCT_ORDERS : menjadi_pembeli
+    RESIDENT_PROFILES o|--o{ PRODUCT_ORDERS : menjadi_penjual_pesanan
+    REWARDS ||--o{ REWARD_REDEMPTIONS : ditukar
+    RESIDENT_PROFILES ||--o{ REWARD_REDEMPTIONS : mengajukan_penukaran
+    USERS o|--o{ REWARD_REDEMPTIONS : menyerahkan_reward
+    USERS o|--o{ REWARD_REDEMPTIONS : membatalkan_penukaran
+    USERS o|--o{ PRODUCT_ORDERS : membatalkan_pesanan
+    RESIDENT_PROFILES o|--o| DONORS : terdaftar_sebagai_donatur
+    DONORS ||--o{ DONATIONS : memberikan_donasi
+    DONORS ||--o{ SUPPORT_POINT_TRANSACTIONS : memiliki_support_points
+    USERS o|--o{ DONATIONS : mencatat_donasi
+    USERS o|--o{ DONATIONS : memverifikasi_donasi
+    USERS o|--o{ EXPENSES : membuat_pengeluaran
+    USERS o|--o{ EXPENSES : menyetujui_pengeluaran
+    USERS o|--o{ EXPENSES : membayar_pengeluaran
+    USERS o|--o{ CASH_TRANSACTIONS : mencatat_transaksi_kas
+    IMPORT_BATCHES ||--o{ IMPORT_BATCH_ROWS : memiliki_baris
+    DEPOSITS o|--o| IMPORT_BATCH_ROWS : hasil_impor
+    USERS o|--o{ IMPORT_BATCHES : mengunggah_impor
+    USERS o|--o{ IMPORT_BATCHES : meninjau_impor
+    USERS o|--o{ AUDIT_LOGS : melakukan_aksi
+    USERS o|--o{ APP_SETTINGS : memperbarui_pengaturan
+    USERS o|--o{ ANNOUNCEMENTS : membuat_pengumuman
+    READINESS_ITEMS ||--o| READINESS_CHECKS : memiliki_pemeriksaan
+    USERS o|--o{ READINESS_CHECKS : menandai_pemeriksaan
+
+    ANNOUNCEMENTS {
+        bigint id PK
+        string reference_code UK
+        string title
+        text message
+        string type
+        boolean is_active
+        timestamp starts_at
+        timestamp ends_at
+        bigint created_by FK
+    }
+
+    APP_SETTINGS {
+        bigint id PK
+        string key UK
+        string group
+        json value
+        bigint updated_by FK
+    }
+
+    AUDIT_LOGS {
+        bigint id PK
+        bigint user_id FK
+        string role_name
+        string action
+        string auditable_type
+        bigint auditable_id
+        json before_data
+        json after_data
+        text reason
+        string ip_address
+        text user_agent
+        timestamp created_at
+    }
+
+    CASH_TRANSACTIONS {
+        bigint id PK
+        string reference_code UK
+        datetime transaction_at
+        string direction
+        string category
+        decimal amount
+        text description
+        string proof_reference
+        string cashable_type
+        bigint cashable_id
+        bigint created_by FK
+        timestamp posted_at
+    }
+
+    DEPOSITS {
+        bigint id PK
+        string reference_code UK
+        bigint resident_profile_id FK
+        string external_name
+        bigint material_id FK
+        bigint material_rate_id FK
+        string type
+        decimal weight_kg
+        decimal price_per_kg_snapshot
+        date price_effective_date_snapshot
+        boolean price_official_at_creation
+        decimal eco_points_per_kg_snapshot
+        decimal donation_multiplier_snapshot
+        decimal money_amount
+        int eco_points_awarded
+        boolean accepted
+        text quality_note
+        boolean resident_choice_confirmed
+        string status
+        string source
+        string offline_transaction_id UK
+        text note
+        bigint created_by FK
+        bigint verified_by FK
+        timestamp verified_at
+        bigint corrected_by FK
+        text correction_reason
+    }
+
+    DONATIONS {
+        bigint id PK
+        string reference_code UK
+        bigint donor_id FK
+        string donor_name_snapshot
+        string display_mode_snapshot
+        string alias_snapshot
+        decimal amount
+        string purpose
+        string status
+        string proof_reference
+        int support_points_awarded
+        bigint created_by FK
+        bigint verified_by FK
+        timestamp received_at
+        text note
+    }
+
+    DONORS {
+        bigint id PK
+        string code UK
+        bigint resident_profile_id FK
+        string name
+        string phone
+        string donor_type
+        string display_mode
+        string public_alias
+        boolean is_active
+    }
+
+    ECO_POINT_TRANSACTIONS {
+        bigint id PK
+        string reference_code UK
+        bigint resident_profile_id FK
+        int points_delta
+        string kind
+        string description
+        string pointable_type
+        bigint pointable_id
+        bigint created_by FK
+        bigint approved_by FK
+        text reason
+    }
+
+    EDUCATION_COMPLETIONS {
+        bigint id PK
+        bigint education_material_id FK
+        bigint resident_profile_id FK
+        int points_awarded
+        timestamp completed_at
+    }
+
+    EDUCATION_MATERIALS {
+        bigint id PK
+        string code UK
+        string title
+        string category
+        int duration_minutes
+        text content
+        json checklist
+        string status
+        bigint created_by FK
+        bigint approved_by FK
+        timestamp published_at
+        text review_note
+    }
+
+    EVENT_ATTENDANCES {
+        bigint id PK
+        string reference_code UK
+        bigint event_id FK
+        bigint resident_profile_id FK
+        string status
+        timestamp checked_in_at
+        bigint created_by FK
+        bigint verified_by FK
+        timestamp verified_at
+        text note
+    }
+
+    EVENT_REGISTRATIONS {
+        bigint id PK
+        string reference_code UK
+        bigint event_id FK
+        bigint resident_profile_id FK
+        string status
+        timestamp registered_at
+        timestamp cancelled_at
+    }
+
+    EVENTS {
+        bigint id PK
+        string reference_code UK
+        string category
+        string title
+        date event_date
+        string event_time
+        string location
+        int quota
+        text description
+        string poster_path
+        int attendance_points
+        int volunteer_points
+        string status
+        bigint created_by FK
+        bigint approved_by FK
+        timestamp published_at
+        text review_note
+    }
+
+    EXPENSES {
+        bigint id PK
+        string reference_code UK
+        string category
+        decimal amount
+        text description
+        string proof_reference
+        string external_reference
+        string status
+        bigint created_by FK
+        bigint approved_by FK
+        bigint paid_by FK
+        timestamp approved_at
+        timestamp paid_at
+        text note
+    }
+
+    IMPORT_BATCH_ROWS {
+        bigint id PK
+        bigint import_batch_id FK
+        int row_number
+        string offline_transaction_id UK
+        datetime occurred_at
+        string resident_code
+        string activity_type
+        string material_code
+        decimal weight_kg
+        decimal value_rp
+        json raw_data
+        json validation_errors
+        string status
+        bigint deposit_id FK
+    }
+
+    IMPORT_BATCHES {
+        bigint id PK
+        string reference_code UK
+        string file_name
+        string storage_path
+        string status
+        int total_rows
+        int valid_rows
+        int error_rows
+        bigint uploaded_by FK
+        bigint reviewed_by FK
+        timestamp reviewed_at
+        text review_note
+        timestamp imported_at
+    }
+
+    MATERIAL_OUTFLOWS {
+        bigint id PK
+        string reference_code UK
+        bigint material_id FK
+        decimal weight_kg
+        string destination
+        string destination_name
+        decimal amount_reported_rp
+        decimal amount_received_rp
+        string payment_status
+        string proof_reference
+        bigint payment_checked_by FK
+        timestamp payment_received_at
+        string status
+        bigint created_by FK
+        bigint verified_by FK
+        timestamp verified_at
+        text note
+    }
+
+    MATERIAL_RATES {
+        bigint id PK
+        bigint material_id FK
+        decimal buy_price_per_kg
+        decimal eco_points_per_kg
+        decimal donation_multiplier
+        date effective_from
+        date effective_to
+        string status
+        bigint approved_by FK
+        text reason
+    }
+
+    MATERIALS {
+        bigint id PK
+        string code UK
+        string name
+        string short_name
+        text acceptance_standard
+        string icon
+        boolean is_active
+    }
+
+    PAYOUTS {
+        bigint id PK
+        string reference_code UK
+        bigint deposit_id FK
+        bigint resident_profile_id FK
+        decimal amount
+        string status
+        bigint created_by FK
+        bigint approved_by FK
+        bigint paid_by FK
+        string proof_reference
+        text note
+        timestamp approved_at
+        timestamp paid_at
+    }
+
+    PRODUCT_ORDERS {
+        bigint id PK
+        string reference_code UK
+        bigint product_id FK
+        bigint buyer_profile_id FK
+        bigint seller_profile_id FK
+        string external_buyer_name
+        string external_buyer_phone
+        boolean is_external_buyer
+        int quantity
+        decimal unit_price_snapshot
+        decimal total_amount
+        string payment_method
+        int points_used
+        string status
+        boolean seller_confirmed
+        boolean buyer_confirmed
+        timestamp seller_confirmed_at
+        timestamp buyer_confirmed_at
+        string handover_proof
+        text held_reason
+        bigint reviewed_by FK
+        timestamp verified_at
+        bigint created_by FK
+        timestamp completed_at
+        bigint cancelled_by FK
+        timestamp cancelled_at
+        text cancel_reason
+    }
+
+    PRODUCTS {
+        bigint id PK
+        string code UK
+        string name
+        text description
+        decimal price
+        int stock
+        string image_path
+        string image_key
+        string status
+        bigint seller_profile_id FK
+        bigint created_by FK
+        bigint approved_by FK
+        timestamp published_at
+        text review_note
+    }
+
+    READINESS_CHECKS {
+        bigint id PK
+        bigint readiness_item_id FK
+        boolean is_completed
+        bigint completed_by FK
+        timestamp completed_at
+        text note
+    }
+
+    READINESS_ITEMS {
+        bigint id PK
+        string code UK
+        string category
+        string title
+        text description
+        int sort_order
+        boolean is_active
+    }
+
+    RESIDENT_PROFILES {
+        bigint id PK
+        bigint user_id FK
+        string resident_code UK
+        string full_name
+        string phone
+        string rt
+        string house_number
+        string household_name
+        string display_name
+        boolean leaderboard_visible
+        string donor_display
+        bigint linked_profile_id FK
+        string status
+        bigint created_by FK
+        bigint approved_by FK
+        timestamp approved_at
+        text review_note
+    }
+
+    REWARD_REDEMPTIONS {
+        bigint id PK
+        string reference_code UK
+        bigint reward_id FK
+        bigint resident_profile_id FK
+        int points_cost
+        string status
+        bigint created_by FK
+        bigint handed_by FK
+        timestamp completed_at
+        bigint cancelled_by FK
+        timestamp cancelled_at
+        text note
+    }
+
+    REWARDS {
+        bigint id PK
+        string code UK
+        string name
+        text description
+        int points_required
+        int stock
+        string image_path
+        string icon
+        boolean is_active
+    }
+
+    ROLE_USER {
+        bigint id PK
+        bigint user_id FK
+        bigint role_id FK
+        bigint assigned_by FK
+        text reason
+        timestamp assigned_at
+        timestamp expires_at
+        timestamp revoked_at
+    }
+
+    ROLES {
+        bigint id PK
+        string name UK
+        string slug UK
+        text description
+    }
+
+    SUPPORT_POINT_TRANSACTIONS {
+        bigint id PK
+        string reference_code UK
+        bigint donor_id FK
+        int points_delta
+        string kind
+        string description
+        string pointable_type
+        bigint pointable_id
+        bigint created_by FK
+        bigint approved_by FK
+        text reason
+    }
+
+    USERS {
+        bigint id PK
+        string name
+        string email UK
+        timestamp email_verified_at
+        string password
+        string user_code UK
+        string phone UK
+        string status
+        boolean login_enabled
+        string remember_token
+    }
+
+    VOLUNTEER_TASKS {
+        bigint id PK
+        string reference_code UK
+        bigint event_id FK
+        bigint resident_profile_id FK
+        text description
+        string status
+        int points_awarded
+        bigint created_by FK
+        bigint verified_by FK
+        timestamp verified_at
+        text note
+    }
+
+    %% RELASI POLYMORPHIC: tidak mempunyai foreign key langsung.
+    %% eco_point_transactions.pointable_type + pointable_id dapat menunjuk setoran, kehadiran, tugas, edukasi, pesanan, atau penukaran reward.
+    %% support_point_transactions.pointable_type + pointable_id menunjuk donasi.
+    %% cash_transactions.cashable_type + cashable_id menunjuk payout, donations, expenses, atau material_outflows.
+    %% audit_logs.auditable_type + auditable_id dapat menunjuk objek yang dicatat.
+    %% resident_profiles.linked_profile_id menunjuk profil kanonis (prototype: linkedTo).
+    %% users.email boleh kosong selama akun belum melengkapi email.
+    %% Rank warga tidak disimpan. Rank dihitung dari jumlah EcoPoints positif:
+    %% Bronze 0, Silver 1000, Gold 2500, Platinum 5000, Sirkula Champion 9000.
+    %% Penukaran reward mengurangi saldo, tidak mengurangi total rank.
+    %% Ambang rank, tarif resmi, dan ID offline yang sudah terpakai disimpan di app_settings.
+    %% Nilai status disimpan snake_case. Padanan label prototype:
+    %% active/Active, pending/Pending, needs_info/Needs Info,
+    %% pending_verification/Pending Verification, verified/Verified, needs_correction/Needs Correction,
+    %% published/Published, draft/Draft, registered/Registered,
+    %% awaiting_seller/Awaiting Seller, awaiting_buyer/Awaiting Buyer, completed/Completed,
+    %% held_for_review/Held for Review, cancelled/Cancelled, pending_pickup/Pending Pickup,
+    %% awaiting_approval/Awaiting Approval, paid/Paid, pending_receipt/Pending Receipt,
+    %% pending_review/Pending Review, received/Received.

@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -13,64 +14,60 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'ecopoints',     // Tambahan untuk poin warga
-        'total_xp',      // Tambahan untuk XP warga
-        'rank_id',       // Tambahan untuk relasi rank
+        'user_code',
+        'phone',
+        'status',
+        'login_enabled',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'login_enabled' => 'boolean',
         ];
     }
 
-    /**
-     * Relasi ke tabel Ranks.
-     */
-    public function rank()
+    public function roles(): BelongsToMany
     {
-        return $this->belongsTo(Rank::class);
+        return $this->belongsToMany(Role::class)
+            ->withPivot(['assigned_by', 'reason', 'assigned_at', 'expires_at', 'revoked_at'])
+            ->withTimestamps();
     }
 
-    /**
-     * Relasi ke tabel PointTransactions.
-     */
-    public function pointTransactions()
+    public function residentProfile(): HasOne
     {
-        return $this->hasMany(PointTransaction::class);
+        return $this->hasOne(ResidentProfile::class);
     }
 
-    /**
-     * Relasi ke tabel RewardRedemptions.
-     */
-    public function redemptions()
+    public function hasRole(string ...$slugs): bool
     {
-        return $this->hasMany(RewardRedemption::class);
+        return $this->roles()
+            ->wherePivotNull('revoked_at')
+            ->whereIn('slug', $slugs)
+            ->exists();
+    }
+
+    public function primaryRoleSlug(): ?string
+    {
+        return $this->roles()->wherePivotNull('revoked_at')->value('slug')
+            ?? $this->roles()->value('slug');
+    }
+
+    public function primaryRoleName(): string
+    {
+        return $this->roles()->wherePivotNull('revoked_at')->value('name')
+            ?? $this->roles()->value('name')
+            ?? 'Pengguna';
     }
 }
