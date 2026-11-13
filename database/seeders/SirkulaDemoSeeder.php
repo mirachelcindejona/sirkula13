@@ -496,6 +496,15 @@ class SirkulaDemoSeeder extends Seeder
                 ['key' => 'productSalePoints', 'group' => 'points', 'value' => 50],
                 ['key' => 'productPurchasePoints', 'group' => 'points', 'value' => 30],
                 ['key' => 'supportPointsPerThousand', 'group' => 'points', 'value' => 1],
+                ['key' => 'donation_channel', 'group' => 'donation', 'value' => [
+                    'bank_name' => 'Bank BRI',
+                    'account_number' => '0081 3245 6789 012',
+                    'account_holder' => 'RW 13 Kelurahan Babakan Sari',
+                    'qris_path' => 'images/donations/qris.png',
+                    'contact_name' => 'Bu Lina — Bendahara',
+                    'contact_phone' => '081234560031',
+                    'sponsorship_note' => 'Dukungan sponsor dipakai untuk kerja bakti, perlengkapan pilah, dan kegiatan lingkungan RW 13. Hubungi bendahara untuk kesepakatan dan laporan penggunaan dana.',
+                ]],
             ];
             foreach ($settings as $setting) {
                 DB::table('app_settings')->updateOrInsert(
