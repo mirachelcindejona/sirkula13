@@ -179,8 +179,100 @@
         if (event.key === 'Escape') closeCombos();
     });
 
+    const fieldMessage = (field) => {
+        if (field.validity.valueMissing) return 'Bagian ini wajib diisi.';
+        if (field.validity.typeMismatch && field.type === 'email') return 'Isi email yang benar, misalnya nama@gmail.com.';
+        if (field.validity.tooShort) return `Minimal ${field.minLength} karakter.`;
+        if (field.validity.patternMismatch) return 'Formatnya belum sesuai.';
+        if (field.validity.rangeUnderflow) return 'Angkanya masih kurang.';
+        if (field.validity.rangeOverflow) return 'Angkanya melebihi batas.';
+        return field.validationMessage || 'Periksa isian ini.';
+    };
+
+    const fieldHost = (field) => field.closest('.password-field') || field.closest('.upload-box') || field.closest('.combo') || field;
+
+    const showFieldError = (field, message) => {
+        field.classList.add('is-invalid');
+        field.setAttribute('aria-invalid', 'true');
+        field.closest('.combo')?.querySelector('.combo-button')?.classList.add('is-invalid');
+        field.closest('.upload-box')?.classList.add('is-invalid');
+        const host = fieldHost(field);
+        const previous = host.previousElementSibling;
+        if (previous?.classList?.contains('field-error')) {
+            previous.textContent = message;
+            return;
+        }
+        const note = document.createElement('p');
+        note.className = 'field-error';
+        note.textContent = message;
+        host.before(note);
+    };
+
+    const clearFieldError = (field) => {
+        field.classList.remove('is-invalid');
+        field.removeAttribute('aria-invalid');
+        field.closest('.combo')?.querySelector('.combo-button')?.classList.remove('is-invalid');
+        field.closest('.upload-box')?.classList.remove('is-invalid');
+        const previous = fieldHost(field).previousElementSibling;
+        if (previous?.classList.contains('field-error')) previous.remove();
+    };
+
+    const formErrors = () => {
+        const node = document.getElementById('form-errors');
+        if (!node) return;
+        let messages = {};
+        try {
+            messages = JSON.parse(node.textContent || '{}');
+        } catch {
+            return;
+        }
+        Object.entries(messages).forEach(([key, list]) => {
+            const message = Array.isArray(list) ? list[0] : list;
+            if (!message) return;
+            const bracket = key.replace(/\.(\d+)/g, '[$1]');
+            const field = document.querySelector(`[name="${CSS.escape(key)}"], [name="${CSS.escape(key)}[]"], [name="${CSS.escape(bracket)}"]`);
+            if (field) showFieldError(field, message);
+        });
+    };
+
+    document.addEventListener('submit', (event) => {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement)) return;
+        let blocked = false;
+        form.querySelectorAll('input, select, textarea').forEach((field) => {
+            if (field.disabled || field.type === 'hidden') return;
+            clearFieldError(field);
+        });
+        const password = form.querySelector('[name="password"]');
+        const confirm = form.querySelector('[name="password_confirmation"]');
+        if (password && confirm && password.value !== confirm.value) {
+            showFieldError(confirm, 'Ulangan kata sandi belum sama.');
+            blocked = true;
+        }
+        form.querySelectorAll('input, select, textarea').forEach((field) => {
+            if (field.disabled || field.type === 'hidden' || (field === confirm && password && password.value !== confirm.value)) return;
+            if (!field.checkValidity()) {
+                showFieldError(field, fieldMessage(field));
+                blocked = true;
+            }
+        });
+        if (blocked) {
+            event.preventDefault();
+            event.stopPropagation();
+            form.querySelector('.is-invalid')?.focus();
+        }
+    }, true);
+
+    document.addEventListener('input', (event) => {
+        const field = event.target;
+        if (field instanceof HTMLInputElement || field instanceof HTMLSelectElement || field instanceof HTMLTextAreaElement) {
+            if (field.validity.valid) clearFieldError(field);
+        }
+    });
+
     markRequired();
     passwordToggles();
     photoBoxes();
     document.querySelectorAll('select').forEach(enhanceSelect);
+    formErrors();
 })();

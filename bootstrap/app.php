@@ -2,10 +2,12 @@
 
 use App\Http\Middleware\EnsureAccountIsActive;
 use App\Http\Middleware\EnsureUserHasRole;
+use App\Http\Middleware\SecureHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -19,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->web(append: [
             EnsureAccountIsActive::class,
+            SecureHeaders::class,
         ]);
 
         $middleware->redirectGuestsTo(fn () => route('login'));
@@ -32,4 +35,16 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+        $exceptions->render(function (HttpException $exception, Request $request) {
+            if ($exception->getStatusCode() !== 403 || $request->expectsJson()) {
+                return null;
+            }
+
+            $message = $exception->getMessage();
+            if ($message === '' || $message === 'Forbidden') {
+                $message = 'Halaman ini bukan untuk akun yang sedang dipakai.';
+            }
+
+            return response()->view('errors.403', ['message' => $message], 403);
+        });
     })->create();

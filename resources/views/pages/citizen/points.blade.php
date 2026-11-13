@@ -41,13 +41,18 @@
                 <div class="item-art product-photo">@if ($reward->image_path)<img src="{{ \App\Support\Uploads::url($reward->image_path) }}" alt="Foto {{ $reward->name }}">@else<img src="{{ asset('images/logo.png') }}" alt="">@endif</div>
                 <div><h3>{{ $reward->name }}</h3><p>{{ $reward->description }}</p></div>
                 <div class="row between"><span class="point-pill">{{ number_format($reward->points_required, 0, ',', '.') }} poin</span><span class="small muted">Stok {{ $stock }}</span></div>
-                <form method="POST" action="{{ route('citizen.rewards.redeem') }}" data-confirm="Tukar {{ $reward->points_required }} poin untuk {{ $reward->name }}? Poin ditahan sampai reward diserahkan.">
-                    @csrf
-                    <input type="hidden" name="reward_id" value="{{ $reward->id }}">
-                    <button class="btn primary block" type="submit" @disabled($stock <= 0 || $available < $reward->points_required)>
-                        {{ $available < $reward->points_required ? 'Poin belum cukup' : ($stock <= 0 ? 'Stok habis' : 'Tukar reward') }}
-                    </button>
-                </form>
+                @php($approved = auth()->user()->residentProfile?->status === 'active')
+                @if ($approved)
+                    <form method="POST" action="{{ route('citizen.rewards.redeem') }}" data-confirm="Tukar {{ $reward->points_required }} poin untuk {{ $reward->name }}? Poin ditahan sampai reward diserahkan.">
+                        @csrf
+                        <input type="hidden" name="reward_id" value="{{ $reward->id }}">
+                        <button class="btn primary block" type="submit" @disabled($stock <= 0 || $available < $reward->points_required)>
+                            {{ $available < $reward->points_required ? 'Poin belum cukup' : ($stock <= 0 ? 'Stok habis' : 'Tukar reward') }}
+                        </button>
+                    </form>
+                @else
+                    <button class="btn primary block" type="button" disabled>Bisa ditukar setelah akun disetujui</button>
+                @endif
             </div>
         @endforeach
     </div>

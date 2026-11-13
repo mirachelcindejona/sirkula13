@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\UserMessage;
 use App\Models\AppSetting;
 use App\Models\CashTransaction;
 use App\Models\Deposit;
@@ -11,11 +12,14 @@ use App\Models\EventAttendance;
 use App\Models\Payout;
 use App\Models\ResidentProfile;
 use App\Support\Audit;
+use App\Support\CashCategories;
 use App\Support\Labels;
 use App\Support\Listing;
+use App\Support\Notices;
 use App\Support\Uploads;
 use App\Support\SimpleWorkbook;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -54,92 +58,124 @@ class FinanceController extends Controller
 
     public function pay(Request $request, Payout $payout): RedirectResponse
     {
-        if ($payout->status === 'paid') {
-            return back()->with('error', 'Pencairan ini sudah dibayarkan.');
-        }
-
         $data = $request->validate([
             'amount' => ['required', 'numeric', 'gt:0'],
             'confirm' => ['accepted'],
         ]);
 
-        $remaining = $payout->remaining();
-        $amount = round((float) $data['amount'], 2);
-        if ($amount > $remaining) {
-            return back()->with('error', 'Jumlah melebihi sisa tabungan '.Labels::money($remaining).'.');
+        try {
+            $message = DB::transaction(function () use ($request, $payout, $data): string {
+                $locked = Payout::query()->whereKey($payout->id)->lockForUpdate()->firstOrFail();
+                if ($locked->status === 'paid' || $locked->remaining() <= 0) {
+                    throw new UserMessage('Pencairan ini sudah dibayarkan.');
+                }
+
+                $amount = round((float) $data['amount'], 2);
+                $remaining = $locked->remaining();
+                if ($amount > $remaining) {
+                    throw new UserMessage('Jumlah melebihi sisa tabungan '.Labels::money($remaining).'.');
+                }
+
+                $before = ['status' => $locked->status, 'sudah_dicairkan' => (float) $locked->paid_amount];
+                $paid = round((float) $locked->paid_amount + $amount, 2);
+                $settled = $paid >= round((float) $locked->amount, 2);
+                $locked->forceFill([
+                    'paid_amount' => $paid,
+                    'status' => $settled ? 'paid' : 'saved',
+                    'paid_by' => $request->user()->id,
+                    'approved_by' => $locked->approved_by ?? $request->user()->id,
+                    'approved_at' => $locked->approved_at ?? now(),
+                    'paid_at' => now(),
+                    'proof_reference' => 'Cair '.Labels::money($amount),
+                ])->save();
+
+                CashTransaction::query()->create([
+                    'reference_code' => 'KAS-'.$locked->reference_code.'-'.now()->format('Hisv'),
+                    'transaction_at' => now(),
+                    'direction' => 'out',
+                    'category' => 'Pencairan setoran warga',
+                    'amount' => $amount,
+                    'description' => 'Pencairan tabungan setoran '.$locked->reference_code,
+                    'proof_reference' => Labels::money($amount),
+                    'cashable_type' => $locked->getMorphClass(),
+                    'cashable_id' => $locked->id,
+                    'created_by' => $request->user()->id,
+                    'posted_at' => now(),
+                ]);
+
+                Audit::record('Mencairkan '.$locked->reference_code, $locked, $before, [
+                    'status' => $locked->status,
+                    'jumlah' => $amount,
+                    'sisa' => $locked->remaining(),
+                ]);
+
+                Notices::toProfile(
+                    $locked->residentProfile,
+                    'Tabungan dicairkan',
+                    'Tabungan '.$locked->reference_code.' dicairkan '.Labels::money($amount).'. Sisa '.Labels::money($locked->remaining()).'.',
+                    route('citizen.deposits')
+                );
+
+                return 'Uang '.Labels::money($amount).' untuk '.$locked->reference_code.' dicatat. Sisa '.Labels::money($locked->remaining()).'.';
+            });
+        } catch (UserMessage $exception) {
+            return back()->with('error', $exception->getMessage());
         }
 
-        $before = ['status' => $payout->status, 'sudah_dicairkan' => (float) $payout->paid_amount];
-        $paid = round((float) $payout->paid_amount + $amount, 2);
-        $settled = $paid >= round((float) $payout->amount, 2);
-        $payout->forceFill([
-            'paid_amount' => $paid,
-            'status' => $settled ? 'paid' : 'saved',
-            'paid_by' => $request->user()->id,
-            'approved_by' => $payout->approved_by ?? $request->user()->id,
-            'approved_at' => $payout->approved_at ?? now(),
-            'paid_at' => now(),
-            'proof_reference' => 'Cair '.Labels::money($amount),
-        ])->save();
-
-        CashTransaction::query()->create([
-            'reference_code' => 'KAS-'.$payout->reference_code.'-'.now()->format('His'),
-            'transaction_at' => now(),
-            'direction' => 'out',
-            'category' => 'Pencairan setoran warga',
-            'amount' => $amount,
-            'description' => 'Pencairan tabungan setoran '.$payout->reference_code,
-            'proof_reference' => Labels::money($amount),
-            'cashable_type' => $payout->getMorphClass(),
-            'cashable_id' => $payout->id,
-            'created_by' => $request->user()->id,
-            'posted_at' => now(),
-        ]);
-
-        Audit::record('Mencairkan '.$payout->reference_code, $payout, $before, [
-            'status' => $payout->status,
-            'jumlah' => $amount,
-            'sisa' => $payout->remaining(),
-        ]);
-
-        return back()->with('success', 'Uang '.Labels::money($amount).' untuk '.$payout->reference_code.' dicatat. Sisa '.Labels::money($payout->remaining()).'.');
+        return back()->with('success', $message);
     }
 
     public function reversePayout(Request $request, Payout $payout): RedirectResponse
     {
-        $cash = $payout->cashOuts()->first();
-        if (! $cash || ! $cash->canRevise()) {
-            return back()->with('error', 'Pencairan terakhir hanya bisa dibatalkan dalam 24 jam.');
+        try {
+            $message = DB::transaction(function () use ($request, $payout): string {
+                $locked = Payout::query()->whereKey($payout->id)->lockForUpdate()->firstOrFail();
+                $cash = $locked->cashOuts()->lockForUpdate()->first();
+                if (! $cash || ! $cash->canRevise()) {
+                    throw new UserMessage('Pencairan terakhir hanya bisa dibatalkan dalam 24 jam.');
+                }
+
+                $amount = round((float) $cash->amount, 2);
+                $cash->forceFill(['reversed_at' => now()])->save();
+                $paid = max(0, round((float) $locked->paid_amount - $amount, 2));
+                $locked->forceFill([
+                    'paid_amount' => $paid,
+                    'status' => $paid >= round((float) $locked->amount, 2) && $paid > 0 ? 'paid' : 'saved',
+                    'paid_at' => $paid > 0 ? $locked->paid_at : null,
+                ])->save();
+
+                CashTransaction::query()->create([
+                    'reference_code' => 'KAS-REV-'.$cash->id.'-'.now()->format('His'),
+                    'transaction_at' => now(),
+                    'direction' => 'in',
+                    'category' => 'Koreksi pencairan',
+                    'amount' => $amount,
+                    'description' => 'Pembatalan pencairan '.$locked->reference_code,
+                    'cashable_type' => $locked->getMorphClass(),
+                    'cashable_id' => $locked->id,
+                    'created_by' => $request->user()->id,
+                    'posted_at' => now(),
+                ]);
+
+                Audit::record('Membatalkan pencairan '.$locked->reference_code, $locked, ['jumlah' => $amount], [
+                    'sudah_dicairkan' => $paid,
+                    'sisa' => $locked->remaining(),
+                ], 'Koreksi dalam 24 jam');
+
+                Notices::toProfile(
+                    $locked->residentProfile,
+                    'Pencairan dibatalkan',
+                    'Pencairan '.$locked->reference_code.' sebesar '.Labels::money($amount).' dibatalkan. Sisa tabungan '.Labels::money($locked->remaining()).'.',
+                    route('citizen.deposits')
+                );
+
+                return 'Pencairan '.Labels::money($amount).' dibatalkan. Sisa tabungan kembali '.Labels::money($locked->remaining()).'.';
+            });
+        } catch (UserMessage $exception) {
+            return back()->with('error', $exception->getMessage());
         }
 
-        $amount = round((float) $cash->amount, 2);
-        $cash->forceFill(['reversed_at' => now()])->save();
-        $paid = max(0, round((float) $payout->paid_amount - $amount, 2));
-        $payout->forceFill([
-            'paid_amount' => $paid,
-            'status' => $paid >= round((float) $payout->amount, 2) && $paid > 0 ? 'paid' : 'saved',
-            'paid_at' => $paid > 0 ? $payout->paid_at : null,
-        ])->save();
-
-        CashTransaction::query()->create([
-            'reference_code' => 'KAS-REV-'.$cash->id,
-            'transaction_at' => now(),
-            'direction' => 'in',
-            'category' => 'Koreksi pencairan',
-            'amount' => $amount,
-            'description' => 'Pembatalan pencairan '.$payout->reference_code,
-            'cashable_type' => $payout->getMorphClass(),
-            'cashable_id' => $payout->id,
-            'created_by' => $request->user()->id,
-            'posted_at' => now(),
-        ]);
-
-        Audit::record('Membatalkan pencairan '.$payout->reference_code, $payout, ['jumlah' => $amount], [
-            'sudah_dicairkan' => $paid,
-            'sisa' => $payout->remaining(),
-        ], 'Koreksi dalam 24 jam');
-
-        return back()->with('success', 'Pencairan '.Labels::money($amount).' dibatalkan. Sisa tabungan kembali '.Labels::money($payout->remaining()).'.');
+        return back()->with('success', $message);
     }
 
     public function cashbook(): View
@@ -359,13 +395,20 @@ class FinanceController extends Controller
 
     private function fillCash(CashTransaction $entry, Request $request): void
     {
+        $allowed = CashCategories::for($request->input('direction'));
+        if ($entry->exists && $request->input('category') === $entry->category) {
+            $allowed[] = $entry->category;
+        }
+
         $data = $request->validate([
             'direction' => ['required', 'in:in,out'],
-            'category' => ['required', 'string', 'max:100'],
-            'amount' => ['required', 'numeric', 'min:1'],
+            'category' => ['required', 'string', 'max:100', Rule::in(array_values(array_unique($allowed)))],
+            'amount' => ['required', 'numeric', 'min:1', 'max:1000000000'],
             'transaction_date' => ['required', 'date'],
             'description' => ['required', 'string', 'max:1000'],
             'proof_reference' => ['required', 'string', 'max:180'],
+        ], [
+            'category.in' => 'Pilih kategori yang sesuai dengan jenis pemasukan atau pengeluaran.',
         ]);
 
         $entry->forceFill([

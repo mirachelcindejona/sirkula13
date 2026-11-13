@@ -15,14 +15,14 @@
                 <h2>Lingkungan terawat, kontribusi tercatat.</h2>
                 <p>Halo, <strong>{{ $first }}</strong>. Kelola setoran, kegiatan, dan manfaat kontribusi lingkungan dalam satu tempat.</p>
                 <div class="row">
-                    @if ($role === 'warga' && $profile?->status === 'active')
+                    @if ($role === 'warga')
                         <a class="btn primary" href="{{ route('citizen.deposits') }}"><x-icon name="scale" /> Lihat setoran saya</a>
-                    @elseif ($role === 'warga')
-                        <a class="btn primary" href="{{ route('public.events') }}"><x-icon name="dashboard" /> Lihat kegiatan</a>
                     @elseif ($role === 'operator-bank-sampah')
                         <a class="btn primary" href="{{ route('bank.deposits.create') }}"><x-icon name="scale" /> Buka menu utama</a>
                     @elseif ($role === 'bendahara')
                         <a class="btn primary" href="{{ route('finance.payouts') }}"><x-icon name="dashboard" /> Buka menu utama</a>
+                    @elseif ($role === 'pengelola-kegiatan')
+                        <a class="btn primary" href="{{ route('program.events') }}"><x-icon name="calendar" /> Buka kegiatan</a>
                     @else
                         <a class="btn primary" href="{{ route('admin.approvals') }}"><x-icon name="dashboard" /> Buka menu utama</a>
                     @endif
@@ -33,14 +33,10 @@
         </div>
     </section>
 
-    @if ($role === 'warga' && $profile?->status !== 'active')
-        <div class="callout warning gap-top"><x-icon name="alert" /><div><strong>Pendaftaran sedang diperiksa</strong>Fitur yang memerlukan akun aktif akan terbuka setelah data disetujui.</div></div>
-    @endif
-
-    @if ($role === 'warga' && $profile?->status === 'active')
+    @if ($role === 'warga')
         <div class="grid three home-stats gap-top">
-            <div class="card kpi"><div class="kpi-icon"><x-icon name="sparkles" /></div><div class="kpi-value">{{ number_format($profile->availablePoints(), 0, ',', '.') }}</div><div class="kpi-label">EcoPoints tersedia</div><div class="kpi-note">Untuk reward</div></div>
-            <div class="card kpi"><div class="kpi-icon"><x-icon name="award" /></div><div class="kpi-value">{{ number_format($profile->earnedPoints(), 0, ',', '.') }}</div><div class="kpi-label">Total terkumpul</div><div class="kpi-note">Rank {{ $profile->rank()['name'] }}</div></div>
+            <div class="card kpi"><div class="kpi-icon"><x-icon name="sparkles" /></div><div class="kpi-value">{{ number_format($profile?->availablePoints() ?? 0, 0, ',', '.') }}</div><div class="kpi-label">EcoPoints tersedia</div><div class="kpi-note">Untuk reward</div></div>
+            <div class="card kpi"><div class="kpi-icon"><x-icon name="award" /></div><div class="kpi-value">{{ number_format($profile?->earnedPoints() ?? 0, 0, ',', '.') }}</div><div class="kpi-label">Total terkumpul</div><div class="kpi-note">Rank {{ $profile?->rank()['name'] ?? '—' }}</div></div>
             <div class="card kpi"><div class="kpi-icon"><x-icon name="scale" /></div><div class="kpi-value">{{ $deposits->count() }}</div><div class="kpi-label">Setoran</div><div class="kpi-note">Riwayat setoran</div></div>
         </div>
         <div class="grid two gap-top">
@@ -51,7 +47,7 @@
                     <a class="btn primary block" href="{{ route('citizen.deposits') }}">Lihat setoran dan pembayaran</a>
                     <a class="btn secondary block" href="{{ route('citizen.points') }}">Tukar EcoPoints dengan reward</a>
                     <a class="btn outline block" href="{{ route('public.events') }}">Daftar kegiatan warga</a>
-                    <a class="btn outline block" href="{{ route('public.catalog') }}">Lihat produk warga</a>
+                    <a class="btn outline block" href="{{ route('citizen.products') }}">Kelola produk saya</a>
                 </div>
             </div>
             <div class="card">
@@ -102,7 +98,7 @@
                 <p class="card-subtitle">Kehadiran baru memberi poin setelah disahkan.</p>
                 <div class="stack gap-top">
                     <a class="btn primary block" href="{{ route('program.events') }}">Buat kegiatan dan catat kehadiran</a>
-                    <a class="btn outline block" href="{{ route('program.catalog') }}">Siapkan produk untuk ditinjau</a>
+                    <a class="btn outline block" href="{{ route('program.orders') }}">Pantau pesanan produk</a>
                 </div>
             </div>
             <div class="callout warning"><x-icon name="alert" /><div><strong>Hadir belum berarti poin masuk</strong>Pendaftaran atau check-in belum memberikan poin. Verifikator berbeda perlu mengesahkan klaim agar poin dihitung satu kali.</div></div>

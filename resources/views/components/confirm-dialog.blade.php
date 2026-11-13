@@ -24,7 +24,7 @@
         };
         document.addEventListener('submit', (event) => {
             const form = event.target;
-            if (!(form instanceof HTMLFormElement) || !form.dataset.confirm || form.dataset.confirmed === '1') {
+            if (event.defaultPrevented || !(form instanceof HTMLFormElement) || !form.dataset.confirm || form.dataset.confirmed === '1') {
                 return;
             }
             event.preventDefault();

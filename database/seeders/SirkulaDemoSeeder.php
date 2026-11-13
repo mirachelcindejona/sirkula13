@@ -261,19 +261,23 @@ class SirkulaDemoSeeder extends Seeder
              * 4. Produk, pesanan, reward, dan penukaran.
              * ----------------------------------------------------------- */
             $productRows = [
-                ['code' => 'PR-001', 'name' => 'Pot tanaman dari kemasan', 'description' => 'Pot tanaman untuk sudut rumah, dibuat dari kemasan yang masih layak.', 'price' => 15000, 'stock' => 5, 'status' => 'published', 'creator' => 'PK-001', 'seller' => 'W-002', 'image_key' => 'pot', 'days' => 10],
+                ['code' => 'PR-001', 'name' => 'Pot tanaman dari kemasan', 'description' => 'Pot tanaman untuk sudut rumah, dibuat dari kemasan yang masih layak.', 'price' => 15000, 'stock' => 4, 'status' => 'published', 'creator' => 'PK-001', 'seller' => 'W-002', 'image_key' => 'pot', 'days' => 10],
                 ['code' => 'PR-002', 'name' => 'Tas belanja guna ulang', 'description' => 'Tas belanja yang dapat digunakan berulang kali.', 'price' => 25000, 'stock' => 8, 'status' => 'published', 'creator' => 'PK-001', 'seller' => 'W-002', 'image_key' => 'bag', 'days' => 8],
                 ['code' => 'PR-003', 'name' => 'Hiasan meja daur ulang', 'description' => 'Hiasan meja dari material yang masih dapat dimanfaatkan.', 'price' => 12000, 'stock' => 4, 'status' => 'published', 'creator' => 'PK-001', 'seller' => 'W-003', 'image_key' => 'decor', 'days' => 5],
             ];
             $products = [];
+            $residentByRef = collect($residentRows)->keyBy('ref');
             foreach ($productRows as $row) {
                 $createdAt = $ago($row['days']);
+                $seller = $residentByRef[$row['seller']];
                 DB::table('products')->updateOrInsert(
                     ['code' => $row['code']],
                     [
                         'name' => $row['name'], 'description' => $row['description'], 'price' => $row['price'],
                         'stock' => $row['stock'], 'image_path' => null, 'image_key' => $row['image_key'],
-                        'status' => $row['status'], 'seller_profile_id' => $residents[$row['seller']],
+                        'status' => $row['status'], 'owner_kind' => 'warga',
+                        'seller_profile_id' => $residents[$row['seller']],
+                        'contact_name' => $seller['name'], 'contact_phone' => $seller['phone'],
                         'created_by' => $users[$row['creator']], 'approved_by' => null,
                         'published_at' => $createdAt, 'created_at' => $createdAt, 'updated_at' => $now,
                     ]

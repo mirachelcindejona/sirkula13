@@ -2,16 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\UserMessage;
 use App\Models\AppSetting;
 use App\Models\Donation;
 use App\Models\Donor;
 use App\Models\Event;
+use App\Models\EventAttendance;
 use App\Models\EventRegistration;
 use App\Models\Material;
 use App\Models\Product;
 use App\Models\ProductOrder;
 use App\Models\ResidentProfile;
 use App\Support\EcoRank;
+use App\Support\OrderFlow;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -70,6 +75,19 @@ class PublicController extends Controller
             ->get();
 
         $profileId = auth()->user()?->residentProfile?->id;
+        if ($profileId) {
+            $attendedIds = EventAttendance::query()
+                ->where('resident_profile_id', $profileId)
+                ->where('status', 'attended')
+                ->pluck('event_id');
+            if ($attendedIds->isNotEmpty()) {
+                EventRegistration::query()
+                    ->where('resident_profile_id', $profileId)
+                    ->whereIn('event_id', $attendedIds)
+                    ->where('status', 'registered')
+                    ->update(['status' => 'attended']);
+            }
+        }
         $mine = $profileId
             ? EventRegistration::query()->with('event')->where('resident_profile_id', $profileId)->latest('registered_at')->get()
             : collect();
@@ -82,34 +100,55 @@ class PublicController extends Controller
         $profile = $this->activeCitizen($request);
         abort_unless($event->status === 'published', 404);
 
-        $activeCount = $event->registrations()->where('status', '!=', 'cancelled')->count();
-        if ($event->quota && $activeCount >= $event->quota) {
-            return back()->with('warning', 'Kuota penuh. Pendaftaran tidak dapat dilanjutkan.');
-        }
+        try {
+            DB::transaction(function () use ($event, $profile): void {
+                $locked = Event::query()->whereKey($event->id)->lockForUpdate()->firstOrFail();
+                $existing = EventRegistration::query()
+                    ->where('event_id', $locked->id)
+                    ->where('resident_profile_id', $profile->id)
+                    ->lockForUpdate()
+                    ->first();
 
-        $existing = EventRegistration::query()
-            ->where('event_id', $event->id)
-            ->where('resident_profile_id', $profile->id)
-            ->first();
+                if ($existing && $existing->status !== 'cancelled') {
+                    throw new UserMessage('Anda sudah terdaftar pada kegiatan ini.');
+                }
 
-        if ($existing && $existing->status !== 'cancelled') {
-            return back()->with('warning', 'Anda sudah terdaftar pada kegiatan ini.');
-        }
+                $activeCount = EventRegistration::query()
+                    ->where('event_id', $locked->id)
+                    ->where('status', '!=', 'cancelled')
+                    ->count();
 
-        if ($existing) {
-            $existing->forceFill([
-                'status' => 'registered',
-                'registered_at' => now(),
-                'cancelled_at' => null,
-            ])->save();
-        } else {
-            (new EventRegistration)->forceFill([
-                'reference_code' => $this->code('REG'),
-                'event_id' => $event->id,
-                'resident_profile_id' => $profile->id,
-                'status' => 'registered',
-                'registered_at' => now(),
-            ])->save();
+                if ($locked->quota && $activeCount >= (int) $locked->quota) {
+                    throw new UserMessage('Kuota penuh. Pendaftaran tidak dapat dilanjutkan.');
+                }
+
+                if ($existing) {
+                    $existing->forceFill([
+                        'status' => 'registered',
+                        'registered_at' => now(),
+                        'cancelled_at' => null,
+                    ])->save();
+
+                    return;
+                }
+
+                (new EventRegistration)->forceFill([
+                    'reference_code' => $this->code('REG'),
+                    'event_id' => $locked->id,
+                    'resident_profile_id' => $profile->id,
+                    'status' => 'registered',
+                    'registered_at' => now(),
+                ])->save();
+            });
+        } catch (UserMessage $exception) {
+            return back()->with('warning', $exception->getMessage());
+        } catch (QueryException $exception) {
+            $duplicate = (int) ($exception->errorInfo[1] ?? 0) === 1062;
+            if ($duplicate) {
+                return back()->with('warning', 'Anda sudah terdaftar pada kegiatan ini.');
+            }
+
+            throw $exception;
         }
 
         return back()->with('success', 'Pendaftaran berhasil. Poin diberikan setelah hadir dan diverifikasi.');
@@ -144,24 +183,19 @@ class PublicController extends Controller
     public function orderProduct(Request $request, Product $product): RedirectResponse
     {
         $profile = $this->activeCitizen($request);
-        abort_unless($product->status === 'published', 404);
 
-        $reserved = $product->orders()->whereNotIn('status', ['cancelled', 'declined', 'completed'])->sum('quantity');
-        abort_if(((int) $product->stock - (int) $reserved) < 1, 422, 'Stok produk tidak tersedia.');
+        try {
+            $order = OrderFlow::place($product, $profile, $request->user());
+        } catch (UserMessage $exception) {
+            return back()->with('warning', $exception->getMessage());
+        }
 
-        (new ProductOrder)->forceFill([
-            'reference_code' => $this->code('ORD'),
-            'product_id' => $product->id,
-            'buyer_profile_id' => $profile->id,
-            'seller_profile_id' => $product->seller_profile_id,
-            'quantity' => 1,
-            'unit_price_snapshot' => $product->price,
-            'total_amount' => $product->price,
-            'status' => 'awaiting_seller',
-            'created_by' => $request->user()->id,
-        ])->save();
+        $link = OrderFlow::link($order);
+        if (! $link) {
+            return redirect()->route('citizen.orders')->with('warning', 'Pesanan tercatat, tetapi nomor WhatsApp penjual belum bisa dibuka.');
+        }
 
-        return redirect()->route('citizen.orders')->with('success', 'Kode pesanan dibuat. Transaksi selesai setelah serah terima dikonfirmasi.');
+        return redirect()->away($link);
     }
 
     public function leaderboard(): View
@@ -204,7 +238,7 @@ class PublicController extends Controller
             'amount' => ['required', 'integer', 'min:1000'],
             'purpose' => ['required', 'string', 'max:180'],
             'display' => ['required', 'in:Alias,Name,Anonim'],
-            'alias' => ['nullable', 'string', 'max:120'],
+            'alias' => ['sometimes', 'nullable', 'string', 'max:120'],
             'confirm' => ['accepted'],
         ]);
 
@@ -232,7 +266,7 @@ class PublicController extends Controller
             $donor->forceFill([
                 'name' => $data['donorName'],
                 'display_mode' => $display,
-                'public_alias' => $display === 'alias' ? ($data['alias'] ?: 'Sahabat RW 13') : null,
+                'public_alias' => $display === 'alias' ? (trim((string) ($data['alias'] ?? '')) ?: 'Sahabat RW 13') : null,
             ])->save();
 
             (new Donation)->forceFill([
@@ -255,8 +289,13 @@ class PublicController extends Controller
 
     private function activeCitizen(Request $request): ResidentProfile
     {
-        $profile = $request->user()?->residentProfile;
-        abort_unless($request->user()?->hasRole('warga') && $profile?->status === 'active', 403);
+        $user = $request->user();
+        $profile = $user?->residentProfile;
+        abort_unless($user?->hasRole('warga') && $profile, 403, 'Halaman ini untuk akun warga.');
+
+        if ($profile->status !== 'active') {
+            throw new HttpResponseException(back()->with('warning', 'Akun belum disetujui pengurus. Tunggu persetujuan dulu, ya.'));
+        }
 
         return $profile;
     }

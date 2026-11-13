@@ -2,7 +2,7 @@
 @section('title', 'Persetujuan akun warga')
 @section('heading', 'Persetujuan akun warga')
 @section('eyebrow', 'Satu warga, satu profil utama')
-@section('subtitle', 'Periksa calon duplikat, setujui, tolak, atau minta data sebelum akun dipakai.')
+@section('subtitle', 'Periksa apakah data ini milik warga yang sama, lalu setujui atau tolak.')
 @section('actions')
     <a class="btn outline" href="{{ route('admin.dashboard') }}">Kembali</a>
 @endsection
@@ -23,11 +23,6 @@
                         @csrf
                         <input type="hidden" name="action" value="approve">
                         <button class="btn small-btn primary" type="submit">Setujui</button>
-                    </form>
-                    <form method="POST" action="{{ route('admin.approvals.store', $user) }}" data-confirm="Minta data tambahan dari {{ $user->name }}?">
-                        @csrf
-                        <input type="hidden" name="action" value="needs_info">
-                        <button class="btn small-btn outline" type="submit">Minta data</button>
                     </form>
                     <form method="POST" action="{{ route('admin.approvals.store', $user) }}" data-confirm="Tolak pendaftaran {{ $user->name }}? Akun tidak bisa masuk.">
                         @csrf

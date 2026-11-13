@@ -16,8 +16,8 @@
             <div class="stack gap-top">
                 <a class="btn primary block" href="{{ route('program.events.create') }}">Tambah kegiatan</a>
                 <a class="btn outline block" href="{{ route('program.events') }}">Catat kehadiran</a>
-                <a class="btn outline block" href="{{ route('program.catalog.create') }}">Tambah produk ke katalog</a>
-                <a class="btn outline block" href="{{ route('program.orders') }}">Kelola referensi transaksi produk</a>
+                <a class="btn outline block" href="{{ route('program.catalog.create') }}">Tambah produk pengurus</a>
+                <a class="btn outline block" href="{{ route('program.orders') }}">Pantau pesanan</a>
             </div>
         </div>
         <div class="card">

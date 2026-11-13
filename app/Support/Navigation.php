@@ -49,7 +49,8 @@ class Navigation
                     ['route' => 'citizen.profile', 'label' => 'Profil & ID warga', 'icon' => 'user'],
                     ['route' => 'citizen.deposits', 'label' => 'Riwayat setoran', 'icon' => 'scale'],
                     ['route' => 'citizen.points', 'label' => 'EcoPoints & reward', 'icon' => 'sparkles'],
-                    ['route' => 'citizen.orders', 'label' => 'Transaksi produk saya', 'icon' => 'receipt'],
+                    ['route' => 'citizen.products', 'label' => 'Produk saya', 'icon' => 'box'],
+                    ['route' => 'citizen.orders', 'label' => 'Pesanan saya', 'icon' => 'receipt'],
                 ], ['icon' => 'user']);
             }
             if ($user->hasRole('operator-bank-sampah')) {
@@ -124,8 +125,8 @@ class Navigation
     {
         $items = [
             ['route' => 'program.events', 'label' => 'Kegiatan & kehadiran', 'icon' => 'calendar'],
-            ['route' => 'program.catalog', 'label' => 'Katalog produk', 'icon' => 'box'],
-            ['route' => 'program.orders', 'label' => 'Pesanan & konfirmasi', 'icon' => 'receipt'],
+            ['route' => 'program.catalog', 'label' => 'Produk pengurus', 'icon' => 'box'],
+            ['route' => 'program.orders', 'label' => 'Pantau pesanan', 'icon' => 'receipt'],
         ];
         if ($forAdmin) {
             array_unshift($items, ['route' => 'program.dashboard', 'label' => 'Ringkasan program', 'icon' => 'dashboard']);
@@ -184,6 +185,7 @@ class Navigation
             'citizen.deposits' => ['warga'],
             'citizen.points' => ['warga'],
             'citizen.orders' => ['warga'],
+            'citizen.products' => ['warga'],
             'bank.dashboard' => ['operator-bank-sampah'],
             'bank.deposits.create' => ['operator-bank-sampah'],
             'bank.records' => ['operator-bank-sampah'],

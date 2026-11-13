@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\UserMessage;
 use App\Models\Deposit;
 use App\Models\EcoPointTransaction;
 use App\Models\Material;
@@ -9,6 +10,7 @@ use App\Models\MaterialOutflow;
 use App\Models\MaterialRate;
 use App\Models\Payout;
 use App\Models\ResidentProfile;
+use App\Models\Reward;
 use App\Models\RewardRedemption;
 use App\Models\Role;
 use App\Models\User;
@@ -210,37 +212,46 @@ class BankOperationsController extends Controller
             'note' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $material = Material::query()->findOrFail($data['material_id']);
-        $in = (float) Deposit::query()->where('material_id', $material->id)->where('status', 'verified')->where('accepted', true)->sum('weight_kg');
-        $out = (float) MaterialOutflow::query()->where('material_id', $material->id)->where('status', 'verified')->sum('weight_kg');
-        $available = $in - $out;
-        if ((float) $data['weight_kg'] > $available + 0.0001) {
-            return back()->withInput()->with('error', 'Jumlah keluar melebihi stok tersedia ('.Labels::quantity($available, $material->unitLabel()).').');
+        try {
+            $outflow = DB::transaction(function () use ($request, $data): MaterialOutflow {
+                $material = Material::query()->whereKey($data['material_id'])->lockForUpdate()->firstOrFail();
+                $in = (float) Deposit::query()->where('material_id', $material->id)->where('status', 'verified')->where('accepted', true)->sum('weight_kg');
+                $out = (float) MaterialOutflow::query()->where('material_id', $material->id)->where('status', 'verified')->sum('weight_kg');
+                $available = round($in - $out, 3);
+                $weight = round((float) $data['weight_kg'], 3);
+                if ($weight > $available + 0.0001) {
+                    throw new UserMessage('Jumlah keluar melebihi stok tersedia ('.Labels::quantity($available, $material->unitLabel()).').');
+                }
+
+                $received = $data['payment_status'] === 'received';
+                $outflow = MaterialOutflow::query()->create([
+                    'reference_code' => 'OUT-'.now()->format('ymdHisv'),
+                    'material_id' => $material->id,
+                    'weight_kg' => $weight,
+                    'destination' => $data['destination'],
+                    'destination_name' => $data['destination_name'],
+                    'amount_reported_rp' => $data['amount'] ?? 0,
+                    'amount_received_rp' => $received ? ($data['amount'] ?? 0) : null,
+                    'payment_status' => $data['payment_status'],
+                    'proof_reference' => $data['proof'] ?? null,
+                    'status' => 'verified',
+                    'created_by' => $request->user()->id,
+                    'verified_by' => $request->user()->id,
+                    'verified_at' => now(),
+                    'note' => $data['note'] ?? null,
+                ]);
+
+                Audit::record('Mencatat material keluar '.$outflow->reference_code, $outflow, null, [
+                    'material' => $material->name,
+                    'berat' => $weight,
+                    'tujuan' => $data['destination_name'],
+                ]);
+
+                return $outflow;
+            });
+        } catch (UserMessage $exception) {
+            return back()->withInput()->with('error', $exception->getMessage());
         }
-
-        $received = $data['payment_status'] === 'received';
-        $outflow = MaterialOutflow::query()->create([
-            'reference_code' => 'OUT-'.now()->format('ymdHis'),
-            'material_id' => $material->id,
-            'weight_kg' => $data['weight_kg'],
-            'destination' => $data['destination'],
-            'destination_name' => $data['destination_name'],
-            'amount_reported_rp' => $data['amount'] ?? 0,
-            'amount_received_rp' => $received ? ($data['amount'] ?? 0) : null,
-            'payment_status' => $data['payment_status'],
-            'proof_reference' => $data['proof'] ?? null,
-            'status' => 'verified',
-            'created_by' => $request->user()->id,
-            'verified_by' => $request->user()->id,
-            'verified_at' => now(),
-            'note' => $data['note'] ?? null,
-        ]);
-
-        Audit::record('Mencatat material keluar '.$outflow->reference_code, $outflow, null, [
-            'material' => $material->name,
-            'berat' => $data['weight_kg'],
-            'tujuan' => $data['destination_name'],
-        ]);
 
         return back()->with('success', 'Material keluar tercatat dan stok berkurang.');
     }
@@ -307,31 +318,39 @@ class BankOperationsController extends Controller
 
     public function completeHandover(Request $request, RewardRedemption $redemption): RedirectResponse
     {
-        if ($redemption->status !== 'pending_pickup') {
-            return back()->with('error', 'Penukaran ini sudah diproses.');
+        try {
+            DB::transaction(function () use ($request, $redemption): void {
+                $locked = RewardRedemption::query()->whereKey($redemption->id)->lockForUpdate()->firstOrFail();
+                if ($locked->status !== 'pending_pickup') {
+                    throw new UserMessage('Penukaran ini sudah diproses.');
+                }
+
+                $reward = Reward::query()->whereKey($locked->reward_id)->lockForUpdate()->firstOrFail();
+                $locked->update([
+                    'status' => 'completed',
+                    'handed_by' => $request->user()->id,
+                    'completed_at' => now(),
+                ]);
+
+                EcoPointTransaction::query()->create([
+                    'reference_code' => 'RED-'.$locked->reference_code,
+                    'resident_profile_id' => $locked->resident_profile_id,
+                    'points_delta' => -1 * (int) $locked->points_cost,
+                    'kind' => 'redeem',
+                    'description' => 'Penukaran '.$locked->reference_code,
+                    'pointable_type' => $locked->getMorphClass(),
+                    'pointable_id' => $locked->id,
+                    'created_by' => $request->user()->id,
+                    'approved_by' => $request->user()->id,
+                ]);
+
+                if ((int) $reward->stock > 0) {
+                    $reward->decrement('stock');
+                }
+            });
+        } catch (UserMessage $exception) {
+            return back()->with('error', $exception->getMessage());
         }
-
-        DB::transaction(function () use ($request, $redemption): void {
-            $redemption->update([
-                'status' => 'completed',
-                'handed_by' => $request->user()->id,
-                'completed_at' => now(),
-            ]);
-
-            EcoPointTransaction::query()->create([
-                'reference_code' => 'RED-'.$redemption->reference_code,
-                'resident_profile_id' => $redemption->resident_profile_id,
-                'points_delta' => -1 * (int) $redemption->points_cost,
-                'kind' => 'redeem',
-                'description' => 'Penukaran '.$redemption->reference_code,
-                'pointable_type' => $redemption->getMorphClass(),
-                'pointable_id' => $redemption->id,
-                'created_by' => $request->user()->id,
-                'approved_by' => $request->user()->id,
-            ]);
-
-            $redemption->reward()->decrement('stock');
-        });
 
         Audit::record('Menyerahkan reward '.$redemption->reference_code, $redemption, ['status' => 'pending_pickup'], ['status' => 'completed']);
 

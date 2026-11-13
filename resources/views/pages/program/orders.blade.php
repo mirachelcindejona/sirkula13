@@ -2,10 +2,10 @@
 @section('title', 'Pesanan produk')
 @section('heading', 'Pesanan produk')
 @section('eyebrow', 'Pengelola kegiatan dan superadmin')
-@section('subtitle', 'Tahan pesanan yang perlu diperiksa. Pesanan yang sudah jelas bisa dilepas kembali.')
+@section('subtitle', 'Pantau transaksi. Kalau ada yang janggal, tahan pesanan supaya warga yang terlibat mendapat pemberitahuan.')
 @section('content')
     <div class="card">
-        <x-table-toolbar placeholder="Cari kode, produk, atau pembeli" :filters="[['name' => 'status', 'label' => 'Semua status', 'options' => ['awaiting_seller' => 'Menunggu penjual', 'held_for_review' => 'Ditahan', 'completed' => 'Selesai', 'cancelled' => 'Dibatalkan']]]" />
+        <x-table-toolbar placeholder="Cari kode, produk, atau pembeli" :filters="[['name' => 'status', 'label' => 'Semua status', 'options' => ['awaiting_seller' => 'Menunggu penjual', 'awaiting_buyer' => 'Menunggu diterima', 'held_for_review' => 'Ditahan', 'completed' => 'Selesai', 'cancelled' => 'Dibatalkan']]]" />
         <div class="table-wrap">
             <table>
                 <thead><tr><th>Kode</th><th>Produk</th><th>Pembeli</th><th>Total</th><th>Status</th><th>Tindakan</th></tr></thead>
@@ -27,7 +27,13 @@
                                         <button class="btn small-btn secondary" type="submit">Lepas pemeriksaan</button>
                                     </form>
                                 @elseif (! in_array($order->status, ['completed', 'cancelled'], true))
-                                    <button class="btn small-btn danger" type="button" data-hold-open data-action="{{ route('program.orders.hold', $order) }}" data-code="{{ $order->reference_code }}">Tahan untuk pemeriksaan</button>
+                                    @if ($order->product && $order->product->owner_kind !== 'warga' && in_array($order->status, ['awaiting_seller', 'awaiting_buyer'], true))
+                                        <form method="POST" action="{{ route('program.orders.complete', $order) }}" data-confirm="Tandai pesanan {{ $order->reference_code }} sudah diterima pembeli?">
+                                            @csrf
+                                            <button class="btn small-btn primary" type="submit">Sudah diterima</button>
+                                        </form>
+                                    @endif
+                                    <button class="btn small-btn danger" type="button" data-hold-open data-action="{{ route('program.orders.hold', $order) }}" data-code="{{ $order->reference_code }}">Tahan</button>
                                 @endif
                             </td>
                         </tr>
@@ -43,7 +49,7 @@
         <form method="POST" id="hold-form">
             @csrf
             <h3 id="hold-title">Tahan pesanan</h3>
-            <p class="small muted">Pesanan ditahan sampai pemeriksaan dilepas.</p>
+            <p class="small muted">Pesanan ditahan dan warga yang terlibat mendapat pemberitahuan.</p>
             <div class="field gap-top">
                 <label for="hold-reason">Alasan ditahan <span class="required">*</span></label>
                 <textarea id="hold-reason" name="reason" required maxlength="500" placeholder="Tuliskan alasan yang jelas"></textarea>

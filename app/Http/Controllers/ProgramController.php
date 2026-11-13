@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\UserMessage;
 use App\Models\EcoPointTransaction;
 use App\Models\Event;
 use App\Models\EventAttendance;
+use App\Models\EventRegistration;
 use App\Models\Product;
 use App\Models\ProductOrder;
 use App\Models\ResidentProfile;
 use App\Support\Audit;
 use App\Support\Listing;
+use App\Support\Notices;
+use App\Support\OrderFlow;
+use App\Support\ProductWriter;
 use App\Support\Uploads;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -110,6 +115,11 @@ class ProgramController extends Controller
                     'created_by' => $request->user()->id,
                     'approved_by' => $request->user()->id,
                 ]);
+                EventRegistration::query()
+                    ->where('event_id', $event->id)
+                    ->where('resident_profile_id', $profileId)
+                    ->where('status', '!=', 'cancelled')
+                    ->update(['status' => 'attended']);
                 $added++;
             }
         });
@@ -134,52 +144,82 @@ class ProgramController extends Controller
 
     public function createProduct(): View
     {
-        return view('pages.program.product-create', [
-            'sellers' => ResidentProfile::query()->where('status', 'active')->orderBy('full_name')->get(),
+        return view('pages.program.product-form', [
+            'product' => null,
+            'audience' => 'pengurus',
+            'action' => route('program.catalog.store'),
+            'back' => route('program.catalog'),
+            'phone' => null,
         ]);
     }
 
     public function storeProduct(Request $request): RedirectResponse
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:180'],
-            'description' => ['nullable', 'string', 'max:2000'],
-            'price' => ['required', 'numeric', 'min:0'],
-            'stock' => ['required', 'integer', 'min:0'],
-            'seller_profile_id' => ['nullable', 'exists:resident_profiles,id'],
-            'photo' => Uploads::rules(),
-            'publish' => ['required', 'in:draft,published'],
-        ], Uploads::messages('photo'));
-
-        $path = null;
-        if ($request->hasFile('photo')) {
-            $path = Uploads::store($request->file('photo'), 'products');
-        }
-
-        $product = Product::query()->create([
-            'code' => 'PRD-'.now()->format('ymdHis'),
-            'name' => $data['name'],
-            'description' => $data['description'] ?? null,
-            'price' => $data['price'],
-            'stock' => $data['stock'],
-            'image_path' => $path,
-            'status' => $data['publish'],
-            'seller_profile_id' => $data['seller_profile_id'] ?? null,
+        $data = $request->validate(ProductWriter::rules(true), ProductWriter::messages());
+        $product = ProductWriter::save(new Product, $data, $request, [
+            'owner_kind' => 'rw',
+            'seller_profile_id' => null,
+            'contact_name' => $data['contact_name'],
+            'contact_phone' => $data['contact_phone'],
             'created_by' => $request->user()->id,
-            'approved_by' => $data['publish'] === 'published' ? $request->user()->id : null,
-            'published_at' => $data['publish'] === 'published' ? now() : null,
         ]);
 
         Audit::record('Menambah produk '.$product->code, $product, null, ['status' => $product->status, 'harga' => $product->price]);
 
-        return redirect()->route('program.catalog')->with('success', $product->status === 'published' ? 'Produk langsung tayang di katalog warga.' : 'Produk disimpan sebagai draft.');
+        return redirect()->route('program.catalog')->with('success', $product->status === 'published' ? 'Produk pengurus langsung tayang di katalog.' : 'Produk disimpan sebagai draft.');
+    }
+
+    public function editProduct(Product $product): View
+    {
+        $this->rwProduct($product);
+
+        return view('pages.program.product-form', [
+            'product' => $product,
+            'audience' => 'pengurus',
+            'action' => route('program.catalog.update', $product),
+            'back' => route('program.catalog'),
+            'phone' => $product->contact_phone,
+        ]);
+    }
+
+    public function updateProduct(Request $request, Product $product): RedirectResponse
+    {
+        $this->rwProduct($product);
+        $data = $request->validate(ProductWriter::rules(true), ProductWriter::messages());
+        $before = $product->only(['name', 'price', 'stock', 'status']);
+        ProductWriter::save($product, $data, $request, [
+            'owner_kind' => 'rw',
+            'seller_profile_id' => null,
+            'contact_name' => $data['contact_name'],
+            'contact_phone' => $data['contact_phone'],
+            'created_by' => $product->created_by ?: $request->user()->id,
+        ]);
+        Audit::record('Mengubah produk '.$product->code, $product, $before, $product->only(['name', 'price', 'stock', 'status']));
+
+        return redirect()->route('program.catalog')->with('success', 'Produk pengurus diperbarui.');
+    }
+
+    public function completeOrder(ProductOrder $order): RedirectResponse
+    {
+        $order->loadMissing('product');
+        abort_unless($order->product && $order->product->owner_kind !== 'warga', 403, 'Pesanan warga ditandai oleh penjualnya. Pengurus memantau dan bisa menahan transaksi yang janggal.');
+
+        try {
+            OrderFlow::complete($order);
+        } catch (UserMessage $exception) {
+            return back()->with('warning', $exception->getMessage());
+        }
+
+        Audit::record('Menandai pesanan diterima '.$order->reference_code, $order, null, ['status' => 'completed']);
+
+        return back()->with('success', 'Pesanan ditandai sudah diterima pembeli.');
     }
 
     public function orders(): View
     {
         $orders = ProductOrder::query()->with(['product', 'buyer', 'seller'])->latest();
         Listing::search($orders, ['reference_code', 'external_buyer_name'], ['product' => 'name', 'buyer' => 'full_name']);
-        if ($status = Listing::oneOf('status', ['awaiting_seller', 'held_for_review', 'completed', 'cancelled'])) {
+        if ($status = Listing::oneOf('status', ['awaiting_seller', 'awaiting_buyer', 'held_for_review', 'completed', 'cancelled'])) {
             $orders->where('status', $status);
         }
 
@@ -198,8 +238,9 @@ class ProgramController extends Controller
             'reviewed_by' => $request->user()->id,
         ])->save();
         Audit::record('Menahan pesanan '.$order->reference_code, $order, $before, ['status' => 'held_for_review', 'alasan' => $reason], $reason);
+        $this->notifyOrderParties($order, 'Pesanan ditahan', 'Pesanan '.$order->reference_code.' ditahan pengurus. '.$reason);
 
-        return back()->with('success', 'Pesanan ditahan untuk pemeriksaan.');
+        return back()->with('success', 'Pesanan ditahan. Warga yang terlibat mendapat pemberitahuan.');
     }
 
     public function releaseOrder(Request $request, ProductOrder $order): RedirectResponse
@@ -211,8 +252,30 @@ class ProgramController extends Controller
             'reviewed_by' => $request->user()->id,
         ])->save();
         Audit::record('Melepas tahan pesanan '.$order->reference_code, $order, ['status' => 'held_for_review'], ['status' => 'awaiting_seller']);
+        $this->notifyOrderParties($order, 'Pemeriksaan dilepas', 'Pemeriksaan pesanan '.$order->reference_code.' sudah dilepas. Transaksi bisa dilanjutkan.');
 
         return back()->with('success', 'Pesanan dikembalikan ke alur biasa.');
+    }
+
+    private function rwProduct(Product $product): void
+    {
+        abort_if($product->owner_kind === 'warga', 403, 'Produk warga diubah oleh pemiliknya. Pengurus memantau pesanan dan bisa menahan transaksi yang janggal.');
+    }
+
+    private function notifyOrderParties(ProductOrder $order, string $title, string $body): void
+    {
+        $order->loadMissing(['product.creator', 'product.seller.user', 'buyer.user', 'seller.user']);
+        Notices::toProfile($order->buyer, $title, $body, route('citizen.orders'));
+        $product = $order->product;
+        $seller = $product?->owner_kind === 'warga' ? $product->seller?->user : $product?->creator;
+        if ($seller && $seller->id !== $order->buyer?->user_id) {
+            Notices::send(
+                $seller,
+                $title,
+                $body,
+                $product?->owner_kind === 'warga' ? route('citizen.products') : route('program.orders')
+            );
+        }
     }
 
     private function saveEvent(Event $event, Request $request): Event

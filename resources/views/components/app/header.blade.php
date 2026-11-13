@@ -6,6 +6,7 @@
             <span class="brand-copy"><span class="brand-name">SIRKULA</span><span class="brand-sub">CERDAS · RW 13</span></span>
         </a>
         <div class="header-spacer"></div>
+        <x-notice-bell />
         <div class="account-chip">
             <span class="account-chip-name">{{ auth()->user()->name }}</span>
             <span class="account-chip-role">{{ auth()->user()->primaryRoleName() }}</span>

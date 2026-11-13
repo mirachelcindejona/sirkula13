@@ -14,15 +14,27 @@
             <div class="field">
                 <label for="cash-direction">Jenis <span class="required">*</span></label>
                 <select id="cash-direction" name="direction">
-                    <option value="in" @selected(old('direction', $entry?->direction ?? 'in') === 'in')>Penerimaan</option>
+                    <option value="in" @selected(old('direction', $entry?->direction ?? 'in') === 'in')>Pemasukan</option>
                     <option value="out" @selected(old('direction', $entry?->direction) === 'out')>Pengeluaran</option>
                 </select>
             </div>
+            @php
+                $cashDirection = old('direction', $entry?->direction ?? 'in');
+                $cashSelected = old('category', $entry?->category);
+                $cashGroups = [
+                    'in' => \App\Support\CashCategories::incoming(),
+                    'out' => \App\Support\CashCategories::outgoing(),
+                ];
+                if ($cashSelected && ! in_array($cashSelected, $cashGroups['in'], true) && ! in_array($cashSelected, $cashGroups['out'], true)) {
+                    $cashGroups[$entry?->direction === 'out' ? 'out' : 'in'][] = $cashSelected;
+                }
+                $cashOptions = $cashGroups[$cashDirection === 'out' ? 'out' : 'in'];
+            @endphp
             <div class="field">
                 <label for="cash-category">Kategori <span class="required">*</span></label>
-                <select id="cash-category" name="category">
-                    @foreach (['Penjualan material ke pengepul', 'Penjualan produk', 'Sponsor / dukungan mitra', 'Donasi uang', 'Biaya operasional', 'Pembelian reward', 'Pencairan setoran warga', 'Pengeluaran lain'] as $category)
-                        <option @selected(old('category', $entry?->category) === $category)>{{ $category }}</option>
+                <select id="cash-category" name="category" required>
+                    @foreach ($cashOptions as $category)
+                        <option value="{{ $category }}" @selected($cashSelected === $category)>{{ $category }}</option>
                     @endforeach
                 </select>
             </div>
@@ -48,4 +60,27 @@
             <button class="btn primary" type="submit">Simpan catatan</button>
         </div>
     </form>
+    <script type="application/json" id="cash-categories">@json($cashGroups)</script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const direction = document.getElementById('cash-direction');
+            const category = document.getElementById('cash-category');
+            const groups = JSON.parse(document.getElementById('cash-categories')?.textContent || '{}');
+            const fill = () => {
+                const list = groups[direction.value] || [];
+                const current = category.value;
+                category.replaceChildren();
+                list.forEach((name) => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    option.selected = name === current;
+                    category.append(option);
+                });
+                if (category.selectedIndex < 0 && category.options.length) category.selectedIndex = 0;
+                category.dispatchEvent(new Event('change', { bubbles: true }));
+            };
+            direction?.addEventListener('change', fill);
+        });
+    </script>
 @endsection

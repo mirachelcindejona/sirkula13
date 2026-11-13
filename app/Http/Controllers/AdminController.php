@@ -10,6 +10,7 @@ use App\Models\ResidentProfile;
 use App\Models\Role;
 use App\Models\User;
 use App\Support\Listing;
+use App\Support\Notices;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -44,23 +45,17 @@ class AdminController extends Controller
     public function approve(Request $request, User $user): RedirectResponse
     {
         $action = $request->validate([
-            'action' => ['required', 'in:approve,needs_info,reject'],
+            'action' => ['required', 'in:approve,reject'],
         ])['action'];
 
         if ($user->id === $request->user()->id) {
             return back()->with('warning', 'Anda tidak dapat mengubah status akun yang sedang dipakai.');
         }
 
-        if ($action === 'needs_info') {
-            $user->update(['status' => 'needs_info']);
-            $user->residentProfile?->update(['status' => 'needs_info']);
-
-            return back()->with('success', 'Data tambahan diminta kepada '.$user->name.'.');
-        }
-
         if ($action === 'reject') {
             $user->update(['status' => 'rejected', 'login_enabled' => false]);
             $user->residentProfile?->update(['status' => 'rejected']);
+            Notices::send($user, 'Pendaftaran ditolak', 'Pendaftaran akun Anda ditolak pengurus. Hubungi pengurus RW jika data yang dikirim perlu diperbaiki.', route('login'));
 
             return back()->with('success', 'Pendaftaran '.$user->name.' ditolak.');
         }
@@ -80,6 +75,7 @@ class AdminController extends Controller
             'approved_by' => $request->user()->id,
             'approved_at' => now(),
         ]);
+        Notices::send($user, 'Akun disetujui', 'Akun Anda sudah disetujui. ID warga terbit dan layanan warga bisa dipakai.', route('citizen.profile'));
 
         return back()->with('success', $user->name.' disetujui sebagai warga aktif.');
     }
@@ -107,6 +103,14 @@ class AdminController extends Controller
             'status' => $status,
             'login_enabled' => $canLogin,
         ]);
+        Notices::toProfile(
+            $resident,
+            $active ? 'Akun diaktifkan' : 'Akun dinonaktifkan',
+            $active
+                ? 'Akun Anda diaktifkan kembali. Layanan warga bisa dipakai seperti semula.'
+                : 'Akun Anda dinonaktifkan pengurus. Hubungi pengurus RW jika ini tidak sesuai.',
+            route('citizen.profile')
+        );
 
         return back()->with('success', $active ? 'Akun warga diaktifkan kembali.' : 'Akun warga dinonaktifkan.');
     }
@@ -143,6 +147,7 @@ class AdminController extends Controller
             'reason' => $data['reason'],
             'assigned_at' => now(),
         ]);
+        Notices::send($account, 'Tugas baru', 'Anda mendapat tugas '.$role->name.'. '.$data['reason'], route('app.home'));
 
         return back()->with('success', 'Role '.$role->name.' ditambahkan untuk '.$account->name.'.');
     }

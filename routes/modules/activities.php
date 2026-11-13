@@ -17,7 +17,10 @@ Route::middleware(['auth', 'role:pengelola-kegiatan,superadmin'])
         Route::get('/katalog', [ProgramController::class, 'catalog'])->name('catalog');
         Route::get('/katalog/baru', [ProgramController::class, 'createProduct'])->name('catalog.create');
         Route::post('/katalog', [ProgramController::class, 'storeProduct'])->name('catalog.store');
+        Route::get('/katalog/{product}/ubah', [ProgramController::class, 'editProduct'])->name('catalog.edit');
+        Route::put('/katalog/{product}', [ProgramController::class, 'updateProduct'])->name('catalog.update');
         Route::get('/pesanan', [ProgramController::class, 'orders'])->name('orders');
+        Route::post('/pesanan/{order}/selesai', [ProgramController::class, 'completeOrder'])->name('orders.complete');
         Route::post('/pesanan/{order}/tahan', [ProgramController::class, 'holdOrder'])->name('orders.hold');
         Route::post('/pesanan/{order}/lepas', [ProgramController::class, 'releaseOrder'])->name('orders.release');
     });

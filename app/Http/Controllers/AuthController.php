@@ -40,12 +40,20 @@ class AuthController extends Controller
         $field = filter_var($credentials['login'], FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
         $user = User::query()->where($field, $credentials['login'])->first();
 
-        if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+        if (! $user) {
             RateLimiter::hit($key, 60);
 
             return back()
                 ->withInput($request->only('login'))
-                ->withErrors(['login' => 'Email, nomor HP, atau kata sandi tidak sesuai.']);
+                ->withErrors(['login' => 'Email atau nomor HP ini belum terdaftar.']);
+        }
+
+        if (! Hash::check($credentials['password'], $user->password)) {
+            RateLimiter::hit($key, 60);
+
+            return back()
+                ->withInput($request->only('login'))
+                ->withErrors(['password' => 'Kata sandi tidak sesuai.']);
         }
 
         if (in_array($user->status, ['inactive', 'rejected'], true) || ! $user->login_enabled) {
@@ -60,7 +68,9 @@ class AuthController extends Controller
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        return redirect()->intended(route(Home::routeName($user)));
+        return redirect()
+            ->intended(route(Home::routeName($user)))
+            ->with('success', 'Anda berhasil masuk.');
     }
 
     public function registerForm(): View
@@ -70,6 +80,14 @@ class AuthController extends Controller
 
     public function register(Request $request): RedirectResponse
     {
+        $registerKey = 'register:'.$request->ip();
+        if (RateLimiter::tooManyAttempts($registerKey, 5)) {
+            return back()
+                ->withInput($request->except('password', 'password_confirmation'))
+                ->withErrors(['email' => 'Pendaftaran dari jaringan ini terlalu sering. Coba lagi beberapa menit lagi.']);
+        }
+        RateLimiter::hit($registerKey, 60);
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
@@ -79,6 +97,20 @@ class AuthController extends Controller
             'house_number' => ['required', 'string', 'max:30'],
             'household_name' => ['nullable', 'string', 'max:150'],
             'consent' => ['accepted'],
+        ], [
+            'name.required' => 'Nama lengkap wajib diisi.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Isi email yang benar, misalnya nama@gmail.com.',
+            'email.unique' => 'Email ini sudah terdaftar. Masuk dengan email itu, atau gunakan email lain.',
+            'phone.required' => 'Nomor HP wajib diisi.',
+            'phone.unique' => 'Nomor HP ini sudah terdaftar.',
+            'phone.regex' => 'Nomor HP belum sesuai. Contoh: 081234567890.',
+            'password.required' => 'Kata sandi wajib diisi.',
+            'password.min' => 'Kata sandi minimal 8 karakter.',
+            'password.confirmed' => 'Ulangan kata sandi belum sama.',
+            'rt.required' => 'Pilih RT.',
+            'house_number.required' => 'Nomor rumah wajib diisi.',
+            'consent.accepted' => 'Centang persetujuan sebelum mengirim pendaftaran.',
         ]);
 
         $user = User::query()->create([
@@ -122,30 +154,54 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('public.home');
+        return redirect()->route('public.home')->with('success', 'Anda sudah keluar.');
     }
 
     public function sendResetLink(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'exists:users,email'],
+        ], [
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Isi email yang benar, misalnya nama@gmail.com.',
+            'email.exists' => 'Email ini belum terdaftar. Periksa lagi, atau daftar dulu.',
         ]);
 
         $key = 'password:'.Str::lower($data['email']).'|'.$request->ip();
         if (RateLimiter::tooManyAttempts($key, 3)) {
-            return back()->with('warning', 'Terlalu banyak permintaan. Coba lagi beberapa menit lagi.');
+            return back()
+                ->withInput()
+                ->withErrors(['email' => 'Permintaan terlalu sering. Coba lagi beberapa menit lagi.']);
         }
         RateLimiter::hit($key, 60);
 
+        $senderReady = config('mail.default') === 'smtp'
+            && filled(config('mail.mailers.smtp.username'))
+            && filled(config('mail.mailers.smtp.password'));
+
+        if (! $senderReady) {
+            return back()
+                ->withInput()
+                ->withErrors(['email' => 'Email ini terdaftar. Petunjuk belum terkirim karena kotak pengirim RW belum bisa masuk ke Gmail.']);
+        }
+
         try {
-            Password::sendResetLink(['email' => $data['email']]);
+            $status = Password::sendResetLink(['email' => $data['email']]);
         } catch (\Throwable $exception) {
             report($exception);
 
-            return back()->with('warning', 'Pemulihan lewat email belum dapat dikirim saat ini. Hubungi pengurus RW untuk verifikasi identitas.');
+            return back()
+                ->withInput()
+                ->withErrors(['email' => 'Petunjuk belum terkirim. Periksa pengaturan email server, lalu coba lagi.']);
         }
 
-        return back()->with('success', 'Jika email terdaftar, petunjuk pemulihan sudah dikirim. Periksa kotak masuk dan folder spam.');
+        if ($status !== Password::RESET_LINK_SENT) {
+            return back()
+                ->withInput()
+                ->withErrors(['email' => 'Petunjuk belum terkirim. Coba lagi sebentar lagi.']);
+        }
+
+        return back()->with('success', 'Petunjuk sudah dikirim ke email Anda. Cek kotak masuk dan folder spam.');
     }
 
     public function resetForm(Request $request, string $token): View
@@ -162,6 +218,9 @@ class AuthController extends Controller
             'token' => ['required', 'string'],
             'email' => ['required', 'email'],
             'password' => ['required', 'string', 'min:8', 'max:72', 'confirmed'],
+        ], [
+            'password.min' => 'Kata sandi minimal 8 karakter.',
+            'password.confirmed' => 'Ulangan kata sandi belum sama.',
         ]);
 
         $status = Password::reset(

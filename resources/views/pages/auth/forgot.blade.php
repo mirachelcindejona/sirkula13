@@ -13,7 +13,6 @@
                 <div class="field">
                     <label for="reset-email">Email terdaftar <span class="required">*</span></label>
                     <input id="reset-email" name="email" type="email" required value="{{ old('email') }}" autocomplete="email">
-                    @error('email')<div class="field-hint">{{ $message }}</div>@enderror
                 </div>
                 <div class="form-actions">
                     <a class="btn outline" href="{{ route('login') }}">Batal</a>

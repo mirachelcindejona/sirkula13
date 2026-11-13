@@ -19,7 +19,10 @@ class Product extends Model
         'image_path',
         'image_key',
         'status',
+        'owner_kind',
         'seller_profile_id',
+        'contact_name',
+        'contact_phone',
         'created_by',
         'approved_by',
         'published_at',
@@ -38,6 +41,11 @@ class Product extends Model
     public function seller(): BelongsTo
     {
         return $this->belongsTo(ResidentProfile::class, 'seller_profile_id');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function orders(): HasMany

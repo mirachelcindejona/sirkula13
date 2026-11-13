@@ -1,0 +1,47 @@
+<?php
+
+return [
+    'accepted' => ':attribute wajib dicentang.',
+    'confirmed' => 'Ulangan :attribute belum sama.',
+    'email' => ':attribute belum benar.',
+    'exists' => ':attribute tidak ditemukan.',
+    'file' => ':attribute harus berupa berkas.',
+    'in' => ':attribute tidak ada di pilihan.',
+    'integer' => ':attribute harus berupa angka bulat.',
+    'max' => [
+        'string' => ':attribute paling panjang :max karakter.',
+        'file' => ':attribute paling besar :max KB.',
+        'numeric' => ':attribute paling besar :max.',
+        'array' => ':attribute paling banyak :max item.',
+    ],
+    'mimes' => ':attribute harus berupa berkas berjenis: :values.',
+    'min' => [
+        'string' => ':attribute minimal :min karakter.',
+        'numeric' => ':attribute minimal :min.',
+        'file' => ':attribute minimal :min KB.',
+        'array' => ':attribute minimal :min item.',
+    ],
+    'numeric' => ':attribute harus berupa angka.',
+    'regex' => 'Format :attribute belum sesuai.',
+    'required' => ':attribute wajib diisi.',
+    'required_if' => ':attribute wajib diisi.',
+    'string' => ':attribute harus berupa teks.',
+    'unique' => ':attribute sudah terdaftar.',
+    'uploaded' => ':attribute gagal diunggah.',
+
+    'attributes' => [
+        'name' => 'Nama',
+        'email' => 'Email',
+        'phone' => 'Nomor HP',
+        'password' => 'Kata sandi',
+        'login' => 'Email atau nomor HP',
+        'amount' => 'Nominal',
+        'reason' => 'Alasan',
+        'title' => 'Judul',
+        'photo' => 'Foto',
+        'qris' => 'Gambar QRIS',
+        'proof' => 'Bukti',
+        'consent' => 'Persetujuan',
+        'confirm' => 'Konfirmasi',
+    ],
+];

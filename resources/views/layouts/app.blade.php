@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="theme-color" content="#6F8F3A">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Beranda') — SIRKULA RW13</title>
     <link rel="icon" href="{{ asset('images/logo.png') }}" type="image/png">
     <link rel="stylesheet" href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800">
@@ -26,13 +27,26 @@
                     <div class="page-actions">@yield('actions')</div>
                 </div>
                 <x-flash />
+                @if (auth()->user()->hasRole('warga') && auth()->user()->residentProfile && auth()->user()->residentProfile->status !== 'active')
+                    <div class="callout warning account-pending">
+                        <x-icon name="alert" />
+                        <div>
+                            <strong>Akun belum disetujui pengurus</strong>
+                            Halaman warga bisa dibuka, tetapi ID warga belum terbit. Menyetor, menukar poin, mendaftar kegiatan, dan memesan produk baru bisa setelah akun disetujui.
+                        </div>
+                    </div>
+                @endif
                 @yield('content')
                 <div class="footer-note">SIRKULA-CERDAS · RW 13</div>
             </main>
         </div>
         <x-app.bottom-nav :navigation="$navigation" />
         <x-confirm-dialog />
+        @if ($errors->any())
+            <script type="application/json" id="form-errors">@json($errors->getMessages())</script>
+        @endif
         <script src="{{ asset('js/sirkula-ui.js') }}?v={{ filemtime(public_path('js/sirkula-ui.js')) }}"></script>
+        <script src="{{ asset('js/sirkula-notices.js') }}?v={{ filemtime(public_path('js/sirkula-notices.js')) }}"></script>
         <x-splash script />
     </div>
     <script>

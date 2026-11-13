@@ -5,62 +5,55 @@
 <h1 align="center">SIRKULA RW 13</h1>
 
 <p align="center">
-  Sistem informasi bank sampah dan partisipasi warga<br>
-  RW 13, Kelurahan Babakan Sari, Kecamatan Kiaracondong, Kota Bandung
+  Catatan bank sampah dan kegiatan warga<br>
+  RW 13 Babakan Sari, Kiaracondong, Bandung
 </p>
 
-SIRKULA mencatat setoran sampah, poin warga, stok material, kas RW, kegiatan, dan donasi dalam satu aplikasi. Warga melihat riwayatnya sendiri. Petugas mengerjakan bagian yang menjadi tugasnya. Halaman publik tetap bisa dibuka tanpa masuk.
+SIRKULA dipakai pengurus dan warga untuk mencatat setoran, poin, stok, kas, kegiatan, dan donasi. Warga melihat riwayatnya sendiri. Petugas hanya mengerjakan bagian tugasnya. Beranda, panduan, kegiatan, katalog, peringkat, dan donasi bisa dibuka tanpa masuk.
 
-## Yang dikerjakan aplikasi
+## Yang tercatat di sini
 
-**Bank sampah.** Operator mencatat setoran warga RW 13 atau penyetor dari luar. Jumlah mengikuti satuan jenis material: kg, g, liter, pcs, lembar, atau ikat. Setoran yang diterima langsung masuk catatan, beserta EcoPoints. Material yang ditolak tidak menghasilkan poin dan tidak dibayar. Setoran jual menunggu pencairan. Setoran donasi material memberi bonus poin dan tidak dibayar uang.
+Setoran langsung masuk catatan begitu petugas menyimpannya. Jumlah mengikuti satuan material: kg, g, liter, pcs, lembar, atau ikat. Setoran yang diterima dapat poin. Yang ditolak tidak dapat poin dan tidak dibayar. Setoran jual ditabung dulu, lalu dicairkan. Setoran donasi material dapat bonus poin, tanpa uang.
 
-**Stok.** Stok dihitung dari setoran yang diterima dikurangi material yang sudah keluar ke pengepul, produk, atau tujuan lain.
+Stok dihitung dari setoran yang diterima dikurangi material yang sudah keluar.
 
-**Keuangan.** Bendahara mencairkan tabungan setoran, termasuk pencairan sebagian. Pencairan terakhir dapat dikoreksi dalam 24 jam. Buku kas memisahkan pemasukan dan pengeluaran. Donasi uang baru masuk kas setelah petugas memastikan uangnya diterima. SupportPoints dari donasi uang terpisah dari EcoPoints.
+Bendahara mencairkan tabungan, termasuk sebagian. Pencairan terakhir masih bisa dikoreksi dalam 24 jam. Buku kas membedakan pemasukan dan pengeluaran. Donasi uang baru masuk kas setelah bendahara memastikan uangnya sudah diterima. Poin dari donasi uang tidak digabung dengan EcoPoints.
 
-**Kegiatan dan produk.** Pengelola membuat kegiatan, mengesahkan kehadiran, menayangkan katalog, dan menindaklanjuti pesanan. Poin kehadiran masuk setelah kehadiran disahkan.
+Pengelola membuat kegiatan, mengesahkan kehadiran, menayangkan katalog, dan mengurus pesanan. Poin hadir masuk setelah kehadiran disahkan. Di akun warga, status kegiatan ikut berubah menjadi hadir.
 
-**Admin.** Superadmin menyetujui pendaftaran warga, mengatur hak akses petugas, tarif, jenis material, katalog reward, serta melihat pesanan yang ditahan dan riwayat aktivitas.
+Superadmin menyetujui atau menolak pendaftaran, mengatur petugas, tarif, jenis material, katalog reward, serta melihat pesanan yang ditahan dan riwayat aktivitas.
 
-## Peran
+## Siapa memakai apa
 
-| Peran | Tugas di aplikasi |
+| Peran | Di aplikasi |
 | --- | --- |
-| Warga | Melihat profil, riwayat setoran, EcoPoints, reward, dan pesanan sendiri |
-| Operator bank sampah | Mencatat setoran, memantau stok, menyerahkan reward, dan mencairkan tabungan |
-| Pengelola kegiatan | Mengelola kegiatan, kehadiran, katalog, dan pesanan |
-| Bendahara | Mengurus pencairan, buku kas, donasi, rekening, QRIS, dan laporan |
-| Superadmin | Mengawasi seluruh modul, akun, tarif, dan audit |
+| Warga | Profil, setoran, poin, reward, dan pesanan sendiri |
+| Operator bank sampah | Setoran, stok, serah terima reward, pencairan |
+| Pengelola kegiatan | Kegiatan, kehadiran, katalog, pesanan |
+| Bendahara | Pencairan, buku kas, donasi, rekening, QRIS, laporan |
+| Superadmin | Akun, tarif, dan seluruh bagian di atas |
 
-Setelah masuk, tiap peran diarahkan ke beranda sesuai tugasnya.
+Akun yang baru daftar bisa masuk dan melihat halaman warga, tetapi ID belum terbit. Menyetor, menukar poin, mendaftar kegiatan, dan memesan produk menunggu persetujuan pengurus. Setelah masuk, tiap peran dibawa ke beranda tugasnya.
 
-## Halaman yang terbuka untuk umum
+## Halaman umum
 
 | Halaman | Alamat |
 | --- | --- |
 | Beranda | `/` |
 | Profil RW | `/profil-rw` |
 | Panduan pemilahan | `/panduan` |
-| Kegiatan warga | `/kegiatan` |
+| Kegiatan | `/kegiatan` |
 | Katalog produk | `/katalog` |
 | Peringkat | `/peringkat` |
-| Donasi dan dukungan | `/donasi` |
+| Donasi | `/donasi` |
 | Masuk | `/masuk` |
-| Daftar warga | `/daftar` |
+| Daftar | `/daftar` |
 
-Pendaftaran warga memakai email. Akun baru dapat dipakai setelah diperiksa pengurus. Pengunjung yang sudah masuk dan membuka `/` diarahkan ke beranda perannya.
+Yang sudah masuk lalu membuka `/` dibawa ke beranda perannya.
 
 ## Menjalankan di komputer
 
-Yang diperlukan:
-
-- PHP 8.3
-- Composer
-- MySQL
-- Node.js, untuk membangun aset bawaan Laravel
-
-Dari folder aplikasi:
+Perlu PHP 8.3, Composer, MySQL, dan Node.js.
 
 ```bash
 composer install
@@ -68,7 +61,7 @@ copy .env.example .env
 php artisan key:generate
 ```
 
-Di `.env`, arahkan database ke MySQL lokal. Untuk Laragon, nilai yang biasa dipakai:
+Di `.env`, arahkan ke database MySQL. Untuk Laragon biasanya seperti ini:
 
 ```env
 APP_URL=http://127.0.0.1:8000
@@ -80,7 +73,7 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-Buat database `sirkula13`, lalu siapkan tabel, data awal, dan tautan berkas:
+Buat database `sirkula13`, lalu:
 
 ```bash
 php artisan migrate
@@ -89,44 +82,50 @@ php artisan storage:link
 php artisan serve
 ```
 
-Buka http://127.0.0.1:8000. `APP_URL` sebaiknya sama dengan alamat yang dibuka di peramban, supaya foto yang disimpan lewat storage tampil.
+Buka http://127.0.0.1:8000. `APP_URL` sebaiknya sama dengan alamat di peramban, supaya foto tampil.
 
-`php artisan db:seed` mengisi peran, jenis material, dan data contoh. Seeder contoh menolak berjalan saat `APP_ENV=production`.
+`php artisan db:seed` mengisi peran, jenis material, dan data contoh. Seeder contoh tidak jalan kalau `APP_ENV=production`.
 
 ## Akun contoh
 
-Akun ini hanya untuk pengembangan. Kata sandinya sama untuk semua akun dan tertulis di `database/seeders/SirkulaDemoSeeder.php`.
+Hanya untuk dicoba di komputer sendiri. Kata sandinya sama untuk semua akun, tertulis di `database/seeders/SirkulaDemoSeeder.php`.
 
 | Email | Peran | Keadaan |
 | --- | --- | --- |
 | `admin@sirkula.test` | Superadmin | Aktif |
-| `rudi@sirkula.test` | Operator bank sampah | Aktif |
-| `yanti@sirkula.test` | Operator bank sampah | Aktif |
+| `rudi@sirkula.test` | Operator | Aktif |
+| `yanti@sirkula.test` | Operator | Aktif |
 | `maya@sirkula.test` | Pengelola kegiatan | Aktif |
 | `nisa@sirkula.test` | Pengelola kegiatan | Aktif |
 | `lina@sirkula.test` | Bendahara | Aktif |
 | `sari@sirkula.test` | Warga | Aktif |
 | `budi@sirkula.test` | Warga | Aktif |
 | `diah@sirkula.test` | Warga | Aktif |
-| `rina@sirkula.test` | Warga | Menunggu persetujuan |
-| `deni@sirkula.test` | Warga | Perlu informasi tambahan |
+| `rina@sirkula.test` | Warga | Belum disetujui |
+| `deni@sirkula.test` | Warga | Belum disetujui |
 
-Rekening, kontak donasi, dan gambar QRIS pada data contoh juga ikut terisi, supaya halaman donasi langsung terlihat siap dipakai. Ganti isinya lewat menu **Rekening & QRIS** sebelum aplikasi dipakai sungguhan.
+Rekening, kontak, dan gambar QRIS contoh juga sudah terisi. Ganti lewat menu Rekening & QRIS sebelum dipakai sungguhan.
+
+## Email lupa kata sandi
+
+Surat dari aplikasi dikirim atas nama sirkulacerdas.aksara2026@gmail.com. Di `.env`, isi `MAIL_PASSWORD` dengan sandi aplikasi Gmail akun itu (16 karakter dari setelan keamanan Google, bukan kata sandi untuk masuk Gmail). Selama sandi itu kosong, petunjuk lupa kata sandi tidak dikirim.
+
+Email yang tidak terdaftar ditolak. Email yang terdaftar mendapat tautan atur ulang, berlaku 60 menit.
 
 ## Foto
 
-Foto setoran, produk, kegiatan, reward, bukti donasi, dan QRIS disimpan di disk `public` (`storage/app/public`). Jenis yang diterima JPG, PNG, dan WEBP, paling besar 2 MB. Setiap unggahan menampilkan pratinjau sebelum disimpan.
+Foto disimpan di `storage/app/public`. Yang diterima JPG, PNG, dan WEBP, paling besar 2 MB. Sebelum disimpan, ada pratinjau.
 
-## Peta singkat
+## Folder yang sering dibuka
 
 ```text
-app/Http/Controllers     Alur setoran, kas, kegiatan, admin, dan halaman publik
-app/Support              Label, unggahan, navigasi, dan aturan tampilan
-routes/modules           Rute per bagian: publik, akun, bank sampah, kegiatan, keuangan, admin
-resources/views/pages    Halaman Blade
-public/css/sirkula.css   Tampilan aplikasi
-public/js/sirkula-ui.js  Pencarian pada dropdown, pratinjau foto, dan tampilan kata sandi
-database/seeders         Peran, material, dan data contoh
+app/Http/Controllers     Setoran, kas, kegiatan, admin, halaman publik
+app/Support              Label, unggahan, dan menu
+routes/modules           Rute per bagian
+resources/views/pages    Halaman
+public/css/sirkula.css   Tampilan
+public/js/sirkula-ui.js  Dropdown, pratinjau foto, pesan isian
+database/seeders         Peran, material, data contoh
 ```
 
 ## Uji

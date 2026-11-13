@@ -676,6 +676,9 @@
         border-color: #edc4ba;
         color: #812b1c;
       }
+      .callout.account-pending {
+        margin-bottom: 18px;
+      }
       .callout strong {
         display: block;
         margin-bottom: 3px;
@@ -708,6 +711,22 @@
       }
       [hidden] {
         display: none !important;
+      }
+      .field-error {
+        margin: 0 0 6px;
+        color: #d1242f;
+        font-size: 12px;
+        line-height: 1.4;
+      }
+      input.is-invalid,
+      select.is-invalid,
+      textarea.is-invalid,
+      input:user-invalid,
+      select:user-invalid,
+      textarea:user-invalid {
+        border-color: #d1242f !important;
+        outline: 2px solid rgba(209, 36, 47, 0.35);
+        outline-offset: 1px;
       }
       .field-hint {
         font-size: 11px;
@@ -3297,23 +3316,94 @@ table.data-table td {
 }
 .password-toggle {
     position: absolute;
-    top: 50%;
+    top: 0;
+    bottom: 0;
     right: 6px;
     display: grid;
     place-items: center;
     width: 36px;
     height: 36px;
+    margin: auto 0;
     padding: 0;
     border: 0;
     border-radius: 10px;
     background: transparent;
     color: #5d6b52;
+    line-height: 0;
     cursor: pointer;
-    transform: translateY(-50%);
 }
 .password-toggle svg {
     width: 20px;
     height: 20px;
+}
+.notice-wrap {
+    position: relative;
+}
+.notice-button {
+    position: relative;
+}
+.notice-count {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 99px;
+    background: #d1242f;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 18px;
+    text-align: center;
+}
+.notice-panel {
+    position: absolute;
+    z-index: 50;
+    top: calc(100% + 8px);
+    right: 0;
+    width: min(360px, calc(100vw - 24px));
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: var(--shadow);
+}
+.notice-head,
+.notice-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.notice-list,
+.notice-page {
+    display: grid;
+    gap: 6px;
+    margin: 8px 0;
+}
+.notice-item,
+.notice-row {
+    display: grid;
+    gap: 3px;
+    padding: 10px;
+    border-radius: 12px;
+    color: inherit;
+    text-decoration: none;
+}
+.notice-item.is-unread,
+.notice-row.is-unread {
+    background: #f4f8ea;
+}
+.notice-item span,
+.notice-row p {
+    color: #52624e;
+    font-size: 13px;
+}
+.notice-item small,
+.notice-row span {
+    color: #7b8774;
+    font-size: 11px;
 }
 .upload-box {
     position: relative;

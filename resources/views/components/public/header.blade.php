@@ -21,7 +21,8 @@
         </nav>
         <div class="public-actions">
             @auth
-                <a class="btn outline" href="{{ route('app.home') }}">Ke aplikasi</a>
+                <x-notice-bell />
+                <a class="btn outline" href="{{ route(\App\Support\Home::routeName(auth()->user())) }}">Ke aplikasi</a>
             @else
                 <a class="btn outline" href="{{ route('login') }}">Masuk</a>
                 <a class="btn primary" href="{{ route('register') }}">Daftar warga</a>

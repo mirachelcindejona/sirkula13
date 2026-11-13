@@ -19,8 +19,7 @@
                         <div class="field full">
                             <label for="reg-email">Alamat email aktif <span class="required">*</span></label>
                             <input id="reg-email" name="email" type="email" required maxlength="255" value="{{ old('email') }}" placeholder="contoh: nama@gmail.com">
-                            <div class="field-hint">Email diperlukan untuk identitas akun dan pemulihan kata sandi.</div>
-                            @error('email')<div class="field-hint">{{ $message }}</div>@enderror
+                            <div class="field-hint">Dipakai untuk masuk dan mengatur ulang kata sandi.</div>
                         </div>
                         <div class="field">
                             <label for="reg-phone">Nomor HP aktif <span class="required">*</span></label>
@@ -68,7 +67,7 @@
             <aside class="card">
                 <h3 class="card-title">Setelah mendaftar</h3>
                 <div class="flow-step"><div class="step-number">1</div><div><h4>Data diperiksa</h4><p>Pengurus mengecek nama, email, nomor HP, RT, nomor rumah, dan kemungkinan profil ganda.</p></div></div>
-                <div class="flow-step"><div class="step-number">2</div><div><h4>Akun disetujui</h4><p>Jika data sesuai, akun diaktifkan. Jika kurang lengkap, pengurus memberi tahu data yang perlu diperbaiki.</p></div></div>
+                <div class="flow-step"><div class="step-number">2</div><div><h4>Akun disetujui atau ditolak</h4><p>Kalau datanya cocok, akun langsung bisa dipakai. Kalau tidak, pengurus menolak pendaftaran.</p></div></div>
                 <div class="flow-step"><div class="step-number">3</div><div><h4>Mulai menggunakan</h4><p>Masuk menggunakan email atau nomor HP dan kata sandi yang dibuat saat pendaftaran.</p></div></div>
             </aside>
         </div>

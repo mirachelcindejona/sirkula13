@@ -7,7 +7,8 @@
     @php
         $user = auth()->user();
         $profile = $user?->residentProfile;
-        $citizen = $user?->hasRole('warga') && $profile?->status === 'active';
+        $citizen = $user?->hasRole('warga') && $profile !== null;
+        $approved = $profile?->status === 'active';
     @endphp
     @guest
         <div class="public-subpage-head">
@@ -46,7 +47,11 @@
                         <a class="btn outline block" href="{{ route('login') }}">Masuk untuk mendaftar</a>
                     @else
                         @if (! $citizen)
-                            <button class="btn outline block" type="button" disabled>Akun warga harus aktif</button>
+                            <button class="btn outline block" type="button" disabled>Masuk sebagai warga untuk mendaftar</button>
+                        @elseif (! $approved)
+                            <button class="btn outline block" type="button" disabled>Bisa daftar setelah akun disetujui</button>
+                        @elseif ($registration && $registration->status === 'attended')
+                            <p class="small">Kehadiran sudah dicatat. Poin kegiatan sudah masuk.</p>
                         @elseif ($registration)
                             <form method="POST" action="{{ route('public.events.cancel', $event) }}" data-confirm="Batalkan pendaftaran {{ $event->title }}?">
                                 @csrf

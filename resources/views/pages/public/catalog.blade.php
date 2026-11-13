@@ -2,26 +2,27 @@
 @section('title', 'Katalog produk')
 @section('heading', 'Katalog produk')
 @section('eyebrow', 'Produk hasil pemanfaatan')
-@section('subtitle', 'Lihat harga, stok, dan status ketersediaan. Pemesanan diarahkan ke WhatsApp; transaksi dicatat kembali dengan kode referensi.')
+@section('subtitle', 'Pilih produk, lalu lanjutkan percakapan di WhatsApp penjual. Pesan sudah terisi nama produk dan kodenya.')
 @section('actions')
     <a class="btn outline" href="{{ route('public.donation') }}"><x-icon name="heart" /> Dukung program</a>
 @endsection
 @section('content')
     @php
         $user = auth()->user();
-        $citizen = $user?->hasRole('warga') && $user->residentProfile?->status === 'active';
+        $approved = $user?->hasRole('warga') && $user->residentProfile?->status === 'active';
+        $waiting = $user?->hasRole('warga') && $user->residentProfile && $user->residentProfile->status !== 'active';
     @endphp
     @guest
         <div class="public-subpage-head">
             <div class="eyebrow">SIRKULA-CERDAS · RW 13</div>
             <h1>Katalog produk</h1>
-            <p>Lihat harga, stok, dan status ketersediaan. Pemesanan diarahkan ke WhatsApp; transaksi dicatat kembali dengan kode referensi.</p>
+            <p>Pilih produk, lalu lanjutkan percakapan di WhatsApp penjual. Pesan sudah terisi nama produk dan kodenya.</p>
         </div>
     @endguest
 
     <div class="callout">
         <x-icon name="box" />
-        <div><strong>Pesanan dilanjutkan melalui WhatsApp</strong>Kode pesanan belum berarti transaksi selesai. Poin diberikan setelah penjual dan pembeli mengonfirmasi serah terima.</div>
+        <div><strong>Pesanan dilanjutkan lewat WhatsApp</strong>Chat sudah berisi nama produk dan kodenya. Penjual menandai pesanan setelah barang diterima.</div>
     </div>
 
     <div class="grid three gap-top">
@@ -33,10 +34,11 @@
                 <div class="item-art product-photo"><img src="{{ $photo }}" alt="Foto {{ $product->name }}"></div>
                 <div>
                     <div class="row between">
-                        <span class="badge info">{{ $available > 0 ? 'Tersedia' : 'Konfirmasi stok' }}</span>
+                        <span class="badge info">{{ $available > 0 ? 'Tersedia' : 'Stok habis' }}</span>
                         <span class="small muted">Stok tersedia {{ number_format($available, 0, ',', '.') }}</span>
                     </div>
                     <h3 class="gap-top">{{ $product->name }}</h3>
+                    <p class="small muted">{{ $product->code }} · {{ $product->seller?->full_name ?: ($product->contact_name ?: 'Pengurus RW') }}</p>
                     <p>{{ $product->description }}</p>
                 </div>
                 <div class="grow">
@@ -44,15 +46,22 @@
                     <div class="small muted">Per produk</div>
                 </div>
                 @guest
-                    <a class="btn primary block" href="{{ route('login') }}">Buat kode pesanan</a>
+                    <a class="btn primary block" href="{{ route('login') }}">Masuk untuk memesan</a>
                 @else
-                    @if ($citizen && $available > 0)
-                        <form method="POST" action="{{ route('public.catalog.order', $product) }}" data-confirm="Buat kode pesanan untuk {{ $product->name }}?">
+                    @php($ownProduct = (int) $product->seller_profile_id === (int) $user?->residentProfile?->id)
+                    @if ($ownProduct)
+                        <button class="btn primary block" type="button" disabled>Ini produk Anda</button>
+                    @elseif ($approved && $available > 0)
+                        <form method="POST" action="{{ route('public.catalog.order', $product) }}" data-confirm="Anda akan diarahkan ke WhatsApp penjual dengan pesan yang sudah terisi. Lanjutkan?">
                             @csrf
-                            <button class="btn primary block" type="submit">Buat kode pesanan</button>
+                            <button class="btn primary block" type="submit">Pesan lewat WhatsApp</button>
                         </form>
+                    @elseif ($waiting)
+                        <button class="btn primary block" type="button" disabled>Bisa dipesan setelah akun disetujui</button>
+                    @elseif ($available < 1)
+                        <button class="btn primary block" type="button" disabled>Stok habis</button>
                     @else
-                        <button class="btn primary block" type="button" disabled>Buat kode pesanan</button>
+                        <button class="btn primary block" type="button" disabled>Pesan lewat WhatsApp</button>
                     @endif
                 @endguest
             </article>

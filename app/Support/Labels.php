@@ -28,6 +28,7 @@ class Labels
             'paid' => 'Lunas',
             'awaiting_approval' => 'Menunggu persetujuan',
             'awaiting_seller' => 'Menunggu konfirmasi penjual',
+            'awaiting_buyer' => 'Menunggu barang diterima',
             'attended' => 'Hadir',
             'fraud_flag' => 'Perlu ditinjau',
             'uploaded' => 'Diunggah',

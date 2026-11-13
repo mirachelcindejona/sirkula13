@@ -40,9 +40,10 @@ class RewardRedemptionController extends Controller
 
         try {
             $redemption = DB::transaction(function () use ($profile, $reward, $request): RewardRedemption {
+            $lockedProfile = \App\Models\ResidentProfile::query()->whereKey($profile->id)->lockForUpdate()->firstOrFail();
             $locked = Reward::query()->whereKey($reward->id)->lockForUpdate()->firstOrFail();
 
-            if ($locked->availableStock() <= 0 || $profile->availablePoints() < $locked->points_required) {
+            if ($locked->availableStock() <= 0 || $lockedProfile->availablePoints() < $locked->points_required) {
                 throw new \RuntimeException('Saldo atau stok berubah. Silakan periksa lalu coba kembali.');
             }
 

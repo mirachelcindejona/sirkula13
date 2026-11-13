@@ -32,6 +32,10 @@
             };
             if (document.readyState === 'complete') hide();
             else window.addEventListener('load', hide);
+            window.addEventListener('pageshow', (event) => {
+                if (event.persisted) splash.classList.add('is-done');
+            });
+            window.addEventListener('pagehide', () => splash.classList.add('is-done'));
             document.addEventListener('click', (event) => {
                 const link = event.target.closest('a');
                 if (!link || link.target || link.hasAttribute('download') || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;

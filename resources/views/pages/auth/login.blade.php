@@ -21,7 +21,6 @@
                 <div class="field">
                     <label for="login-identifier">Email atau nomor HP</label>
                     <input id="login-identifier" name="login" type="text" autocomplete="username" placeholder="nama@email.com atau 08xxxxxxxxxx" value="{{ old('login') }}" required>
-                    @error('login')<div class="field-hint">{{ $message }}</div>@enderror
                 </div>
                 <div class="field gap-top">
                     <label for="login-password">Kata sandi</label>

@@ -60,9 +60,10 @@
                             <option value="Anonim" @selected(old('display') === 'Anonim')>Anonim</option>
                         </select>
                     </div>
-                    <div class="field">
-                        <label for="donor-alias">Alias (jika dipilih)</label>
-                        <input id="donor-alias" name="alias" value="{{ old('alias') }}" placeholder="Misalnya Sahabat RW 13">
+                    <div class="field" id="alias-field">
+                        <label for="donor-alias">Nama panggilan</label>
+                        <input id="donor-alias" name="alias" value="{{ old('alias') }}" maxlength="120" placeholder="Misalnya Sahabat RW 13">
+                        <div class="field-hint">Kalau dikosongkan, yang tampil adalah Sahabat RW 13.</div>
                     </div>
                     <div class="field full">
                         <div class="checkline">
@@ -73,6 +74,18 @@
                 </div>
                 <div class="form-actions"><button class="btn primary" type="submit">Kirim catatan donasi</button></div>
             </form>
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const display = document.getElementById('donor-display');
+                    const alias = document.getElementById('alias-field');
+                    const sync = () => {
+                        if (!display || !alias) return;
+                        alias.hidden = display.value !== 'Alias';
+                    };
+                    display?.addEventListener('change', sync);
+                    sync();
+                });
+            </script>
         </div>
     </div>
 @endsection
