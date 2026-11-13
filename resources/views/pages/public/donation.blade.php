@@ -13,7 +13,8 @@
         </div>
     @endguest
 
-    <div class="grid two">
+    @include('pages.public._donation-channel', ['channel' => $channel])
+    <div class="grid two gap-top">
         <div class="card">
             <h3 class="card-title">Dukung kegiatan RW 13</h3>
             <p class="card-subtitle">Donasi digunakan sesuai tujuan yang disepakati dan dicatat dalam buku kas.</p>
@@ -28,7 +29,7 @@
             <div class="card-head">
                 <div>
                     <h3 class="card-title">Donasi uang</h3>
-                    <p class="card-subtitle">Formulir ini mencatat niat donasi. Bendahara akan memeriksa penerimaan sebelum donasi masuk ke buku kas.</p>
+                    <p class="card-subtitle">Formulir ini mencatat niat donasi. Donasi masuk ke buku kas setelah penerimaan uang diperiksa.</p>
                 </div>
             </div>
             <form method="POST" action="{{ route('public.donation.store') }}">
@@ -73,9 +74,5 @@
                 <div class="form-actions"><button class="btn primary" type="submit">Kirim catatan donasi</button></div>
             </form>
         </div>
-    </div>
-    <h2 class="section-title">Alur verifikasi</h2>
-    <div class="card">
-        <p class="small muted">Sesudah formulir ini dibuat, buka dengan akun Bendahara → <strong>Verifikasi donasi</strong>. Petugas memasukkan referensi bukti, lalu mengonfirmasi penerimaan. Barulah kas masuk dan SupportPoints ditambahkan.</p>
     </div>
 @endsection

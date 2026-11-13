@@ -3,7 +3,7 @@
 @section('heading', 'Ubah reward')
 @section('eyebrow', 'Admin')
 @section('content')
-    <form method="POST" action="{{ route('admin.rewards.update', $reward) }}" class="card">
+    <form method="POST" action="{{ route('admin.rewards.update', $reward) }}" class="card" enctype="multipart/form-data">
         @csrf
         @method('PUT')
         @include('pages.admin.rewards._form', ['reward' => $reward])

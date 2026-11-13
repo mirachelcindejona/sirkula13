@@ -21,6 +21,7 @@ class Material extends Model
         'short_name',
         'acceptance_standard',
         'icon',
+        'unit',
         'is_active',
     ];
 
@@ -56,5 +57,10 @@ class Material extends Model
     public function outflows(): HasMany
     {
         return $this->hasMany(MaterialOutflow::class, 'material_id');
+    }
+
+    public function unitLabel(): string
+    {
+        return $this->unit ?: 'kg';
     }
 }

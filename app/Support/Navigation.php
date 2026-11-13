@@ -3,7 +3,6 @@
 namespace App\Support;
 
 use App\Models\Deposit;
-use App\Models\ImportBatch;
 use App\Models\Payout;
 use App\Models\ProductOrder;
 use App\Models\User;
@@ -40,10 +39,7 @@ class Navigation
                 ['route' => 'admin.materials.index', 'label' => 'Jenis material', 'icon' => 'box'],
                 ['route' => 'admin.rewards.index', 'label' => 'Katalog reward', 'icon' => 'gift'],
                 ['route' => 'admin.fraud', 'label' => 'Transaksi berisiko', 'icon' => 'alert'],
-                ['route' => 'admin.import', 'label' => 'Pemeriksaan impor', 'icon' => 'upload'],
-                ['route' => 'admin.readiness', 'label' => 'Kesiapan operasional', 'icon' => 'clipboard'],
                 ['route' => 'admin.audit', 'label' => 'Riwayat aktivitas', 'icon' => 'history'],
-                ['route' => 'admin.backup', 'label' => 'Backup & pemulihan', 'icon' => 'database'],
             ], ['icon' => 'shield']);
             $add('Layanan publik', self::publicItems(true, true), ['icon' => 'home']);
         } else {
@@ -60,11 +56,11 @@ class Navigation
                 $add('Ringkasan', [['route' => 'bank.dashboard', 'label' => 'Ringkasan operator', 'icon' => 'dashboard']], ['standalone' => true]);
                 $add('Operator', [
                     ['route' => 'bank.deposits.create', 'label' => 'Catat setoran', 'icon' => 'scale'],
-                    ['route' => 'bank.verify', 'label' => 'Verifikasi setoran', 'icon' => 'check'],
+                    ['route' => 'bank.records', 'label' => 'Catatan setoran', 'icon' => 'receipt'],
                     ['route' => 'bank.inventory', 'label' => 'Stok & penyaluran', 'icon' => 'box'],
                     ['route' => 'bank.residents', 'label' => 'Cari data warga', 'icon' => 'user'],
                     ['route' => 'bank.handover', 'label' => 'Serah terima reward', 'icon' => 'gift'],
-                    ['route' => 'bank.import', 'label' => 'Impor data offline', 'icon' => 'upload'],
+                    ['route' => 'finance.payouts', 'label' => 'Pencairan setoran', 'icon' => 'wallet'],
                 ], ['icon' => 'scale']);
             }
             if ($user->hasRole('pengelola-kegiatan')) {
@@ -92,10 +88,9 @@ class Navigation
     {
         $counts = [
             'admin.approvals' => User::query()->whereIn('status', ['pending', 'needs_info'])->count(),
-            'bank.verify' => Deposit::query()->where('status', 'submitted')->count(),
-            'finance.payouts' => Payout::query()->whereIn('status', ['awaiting_approval', 'approved'])->count(),
+            'bank.records' => Deposit::query()->whereDate('created_at', today())->count(),
+            'finance.payouts' => Payout::query()->where('status', '!=', 'paid')->count(),
             'admin.fraud' => ProductOrder::query()->where('status', 'held_for_review')->count(),
-            'admin.import' => ImportBatch::query()->where('status', 'uploaded')->count(),
         ];
 
         foreach ($groups as &$group) {
@@ -115,10 +110,10 @@ class Navigation
         return [
             ['route' => 'bank.dashboard', 'label' => 'Ringkasan operator', 'icon' => 'dashboard'],
             ['route' => 'bank.deposits.create', 'label' => 'Catat setoran', 'icon' => 'scale'],
-            ['route' => 'bank.verify', 'label' => 'Verifikasi setoran', 'icon' => 'check'],
+            ['route' => 'bank.records', 'label' => 'Catatan setoran', 'icon' => 'receipt'],
             ['route' => 'bank.inventory', 'label' => 'Stok & penyaluran', 'icon' => 'box'],
             ['route' => 'bank.handover', 'label' => 'Serah terima reward', 'icon' => 'gift'],
-            ['route' => 'bank.import', 'label' => 'Impor data offline', 'icon' => 'upload'],
+            ['route' => 'finance.payouts', 'label' => 'Pencairan setoran', 'icon' => 'wallet'],
         ];
     }
 
@@ -134,7 +129,6 @@ class Navigation
         ];
         if ($forAdmin) {
             array_unshift($items, ['route' => 'program.dashboard', 'label' => 'Ringkasan program', 'icon' => 'dashboard']);
-            $items[] = ['route' => 'admin.publication', 'label' => 'Persetujuan publikasi', 'icon' => 'book-check'];
         }
 
         return $items;
@@ -147,14 +141,12 @@ class Navigation
     {
         $items = [
             ['route' => 'finance.dashboard', 'label' => 'Ringkasan keuangan', 'icon' => 'dashboard'],
-            ['route' => 'finance.payouts', 'label' => 'Pembayaran warga', 'icon' => 'wallet'],
+            ['route' => 'finance.payouts', 'label' => 'Pencairan setoran', 'icon' => 'wallet'],
             ['route' => 'finance.cashbook', 'label' => 'Buku kas', 'icon' => 'receipt'],
             ['route' => 'finance.donations', 'label' => 'Verifikasi donasi', 'icon' => 'heart'],
+            ['route' => 'finance.channel', 'label' => 'Rekening & QRIS', 'icon' => 'heart'],
             ['route' => 'finance.reports', 'label' => $includeApproval ? 'Laporan' : 'Laporan keuangan', 'icon' => 'chart'],
         ];
-        if ($includeApproval) {
-            $items[] = ['route' => 'admin.cash', 'label' => 'Persetujuan keuangan', 'icon' => 'check'];
-        }
 
         return $items;
     }
@@ -194,20 +186,19 @@ class Navigation
             'citizen.orders' => ['warga'],
             'bank.dashboard' => ['operator-bank-sampah'],
             'bank.deposits.create' => ['operator-bank-sampah'],
-            'bank.verify' => ['operator-bank-sampah'],
+            'bank.records' => ['operator-bank-sampah'],
             'bank.inventory' => ['operator-bank-sampah'],
             'bank.residents' => ['operator-bank-sampah'],
             'bank.handover' => ['operator-bank-sampah'],
-            'bank.import' => ['operator-bank-sampah'],
             'program.dashboard' => ['pengelola-kegiatan'],
             'program.events' => ['pengelola-kegiatan'],
             'program.catalog' => ['pengelola-kegiatan'],
             'program.orders' => ['pengelola-kegiatan'],
-            'admin.publication' => ['pengelola-kegiatan'],
             'finance.dashboard' => ['bendahara'],
-            'finance.payouts' => ['bendahara'],
+            'finance.payouts' => ['operator-bank-sampah', 'bendahara'],
             'finance.cashbook' => ['bendahara'],
             'finance.donations' => ['bendahara'],
+            'finance.channel' => ['bendahara'],
             'finance.reports' => ['bendahara'],
         ];
 
@@ -234,8 +225,8 @@ class Navigation
             'operator-bank-sampah' => [
                 ['route' => 'bank.dashboard', 'label' => 'Beranda', 'icon' => 'home'],
                 ['route' => 'bank.deposits.create', 'label' => 'Setoran', 'icon' => 'scale'],
-                ['route' => 'bank.verify', 'label' => 'Verifikasi', 'icon' => 'check'],
                 ['route' => 'bank.inventory', 'label' => 'Stok', 'icon' => 'box'],
+                ['route' => 'finance.payouts', 'label' => 'Cairkan', 'icon' => 'wallet'],
             ],
             'pengelola-kegiatan' => [
                 ['route' => 'program.dashboard', 'label' => 'Beranda', 'icon' => 'home'],
@@ -245,7 +236,7 @@ class Navigation
             ],
             'bendahara' => [
                 ['route' => 'finance.dashboard', 'label' => 'Beranda', 'icon' => 'home'],
-                ['route' => 'finance.payouts', 'label' => 'Pembayaran', 'icon' => 'wallet'],
+                ['route' => 'finance.payouts', 'label' => 'Cairkan', 'icon' => 'wallet'],
                 ['route' => 'finance.cashbook', 'label' => 'Buku kas', 'icon' => 'receipt'],
                 ['route' => 'finance.reports', 'label' => 'Laporan', 'icon' => 'chart'],
             ],

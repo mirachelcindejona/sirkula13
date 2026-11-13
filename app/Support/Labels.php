@@ -13,7 +13,10 @@ class Labels
             'pending_pickup' => 'Menunggu pengambilan',
             'pending_receipt' => 'Menunggu penerimaan',
             'needs_info' => 'Perlu data',
-            'submitted' => 'Menunggu verifikasi',
+            'submitted' => 'Tercatat',
+            'accepted' => 'Diterima',
+            'in' => 'Pemasukan',
+            'out' => 'Pengeluaran',
             'recorded' => 'Tercatat',
             'draft' => 'Draft',
             'verified' => 'Terverifikasi',
@@ -35,6 +38,8 @@ class Labels
             'needs_correction' => 'Perlu koreksi',
             'held_for_review' => 'Ditahan untuk pemeriksaan',
             'awaiting_payment' => 'Menunggu pembayaran',
+            'saved' => 'Ditabung',
+            'partial' => 'Sebagian',
             default => $status ? str_replace('_', ' ', $status) : '—',
         };
     }
@@ -42,10 +47,10 @@ class Labels
     public static function badge(?string $status): string
     {
         return match ($status) {
-            'active', 'verified', 'approved', 'published', 'completed', 'paid', 'attended' => 'success',
-            'pending', 'pending_pickup', 'pending_receipt', 'submitted', 'recorded', 'awaiting_approval', 'awaiting_seller', 'uploaded' => 'pending',
+            'active', 'verified', 'approved', 'published', 'completed', 'paid', 'attended', 'accepted', 'in' => 'success',
+            'pending', 'pending_pickup', 'pending_receipt', 'submitted', 'recorded', 'awaiting_approval', 'awaiting_seller', 'uploaded', 'saved', 'partial' => 'pending',
             'needs_info', 'fraud_flag', 'needs_correction', 'held_for_review' => 'warning',
-            'rejected' => 'danger',
+            'rejected', 'out' => 'danger',
             'cancelled' => 'neutral',
             'donation' => 'donation',
             'sale' => 'info',
@@ -63,6 +68,13 @@ class Labels
 
     public static function kg(float|int|string|null $weight): string
     {
-        return rtrim(rtrim(number_format((float) $weight, 3, ',', '.'), '0'), ',').' kg';
+        return self::quantity($weight, 'kg');
+    }
+
+    public static function quantity(float|int|string|null $amount, ?string $unit = 'kg'): string
+    {
+        $formatted = rtrim(rtrim(number_format((float) $amount, 3, ',', '.'), '0'), ',');
+
+        return $formatted.' '.($unit ?: 'kg');
     }
 }

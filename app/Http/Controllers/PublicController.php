@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AppSetting;
 use App\Models\Donation;
 use App\Models\Donor;
 use App\Models\Event;
@@ -21,7 +22,7 @@ class PublicController extends Controller
     public function home(): View|RedirectResponse
     {
         if (auth()->check()) {
-            return redirect()->route('app.home');
+            return redirect()->route(\App\Support\Home::routeName(auth()->user()));
         }
 
         $leaders = ResidentProfile::query()
@@ -36,6 +37,7 @@ class PublicController extends Controller
             'events' => Event::query()->where('status', 'published')->orderBy('event_date')->limit(2)->get(),
             'products' => Product::query()->with('seller')->where('status', 'published')->where('stock', '>', 0)->orderBy('name')->limit(3)->get(),
             'leaders' => $leaders,
+            'channel' => AppSetting::donationChannel(),
         ]);
     }
 
@@ -191,6 +193,7 @@ class PublicController extends Controller
     {
         return view('pages.public.donation', [
             'total' => (float) Donation::query()->where('status', 'verified')->sum('amount'),
+            'channel' => AppSetting::donationChannel(),
         ]);
     }
 

@@ -1,30 +1,31 @@
 @extends('layouts.app')
-@section('title', 'Pemeriksaan transaksi berisiko')
-@section('heading', 'Pemeriksaan transaksi berisiko')
-@section('eyebrow', 'Tahan poin sampai jelas')
-@section('subtitle', 'Transaksi yang mencurigakan perlu bukti dan keputusan yang tercatat.')
+@section('title', 'Pesanan ditahan')
+@section('heading', 'Pesanan ditahan')
+@section('eyebrow', 'Pemeriksaan pengelola')
+@section('subtitle', 'Pesanan ini menunggu pemeriksaan. Alasan tampil di sini, pelepasan dilakukan dari menu pesanan.')
 @section('actions')
     <a class="btn outline" href="{{ route('admin.dashboard') }}">Kembali</a>
 @endsection
 @section('content')
     <div class="card">
+        <x-table-toolbar placeholder="Cari kode, produk, atau pembeli" />
         <div class="table-wrap">
             <table>
-                <thead><tr><th>Kode</th><th>Warga</th><th>Material</th><th>Catatan</th></tr></thead>
+                <thead><tr><th>Kode</th><th>Produk</th><th>Pembeli</th><th>Alasan</th></tr></thead>
                 <tbody>
-                    @forelse ($deposits as $deposit)
+                    @forelse ($orders as $order)
                         <tr>
-                            <td><strong>{{ $deposit->reference_code }}</strong></td>
-                            <td>{{ $deposit->residentProfile?->full_name }}</td>
-                            <td>{{ $deposit->material?->name }}</td>
-                            <td>{{ $deposit->note ?: $deposit->quality_note }}</td>
+                            <td><strong>{{ $order->reference_code }}</strong></td>
+                            <td>{{ $order->product?->name }}</td>
+                            <td>{{ $order->buyer?->full_name }}</td>
+                            <td>{{ $order->held_reason ?: '—' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="4">Tidak ada transaksi yang ditahan.</td></tr>
+                        <tr><td colspan="4">Tidak ada pesanan yang ditahan.</td></tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
-        {{ $deposits->links() }}
+        {{ $orders->links() }}
     </div>
 @endsection

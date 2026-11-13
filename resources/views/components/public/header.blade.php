@@ -5,6 +5,7 @@
         ['route' => 'public.guide', 'label' => 'Panduan'],
         ['route' => 'public.events', 'label' => 'Kegiatan'],
         ['route' => 'public.catalog', 'label' => 'Produk warga'],
+        ['route' => 'public.donation', 'label' => 'Donasi'],
     ];
 @endphp
 <header class="public-header">

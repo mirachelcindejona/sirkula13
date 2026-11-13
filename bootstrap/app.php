@@ -22,7 +22,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->redirectGuestsTo(fn () => route('login'));
-        $middleware->redirectUsersTo(fn () => route('app.home'));
+        $middleware->redirectUsersTo(function () {
+            $user = auth()->user();
+
+            return $user ? route(\App\Support\Home::routeName($user)) : route('login');
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

@@ -4,8 +4,10 @@
 @section('eyebrow', 'Warga')
 @section('subtitle', 'Pesanan produk warga, terpisah dari penukaran reward.')
 @section('content')
-    <div class="card overflow-x-auto">
-        <table class="data-table">
+    <div class="card">
+        <x-table-toolbar placeholder="Cari kode atau nama produk" />
+        <div class="table-wrap">
+        <table>
             <thead><tr><th>Kode</th><th>Produk</th><th>Total</th><th>Status</th></tr></thead>
             <tbody>
                 @forelse ($orders as $order)
@@ -20,6 +22,7 @@
                 @endforelse
             </tbody>
         </table>
+        </div>
         {{ $orders->links() }}
     </div>
 @endsection

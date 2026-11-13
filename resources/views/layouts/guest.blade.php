@@ -4,9 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Masuk') — SIRKULA RW 13</title>
+    <link rel="icon" href="{{ asset('images/logo.png') }}" type="image/png">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body>
+    <x-splash />
     <main class="mx-auto flex min-h-screen w-full max-w-md items-center px-4 py-10">
         <div class="w-full">
             <a href="{{ route('public.home') }}" class="mb-6 flex items-center gap-2.5 no-underline">
@@ -17,5 +19,6 @@
             @yield('content')
         </div>
     </main>
+    <x-splash script />
 </body>
 </html>

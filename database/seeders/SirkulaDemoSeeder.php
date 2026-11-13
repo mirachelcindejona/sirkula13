@@ -122,8 +122,8 @@ class SirkulaDemoSeeder extends Seeder
                 ['ref' => 'SET-2602', 'resident' => 'W-001', 'material' => 'kardus', 'weight' => 2.000, 'type' => 'donation', 'price' => 0, 'amount' => 0, 'points' => 150, 'status' => 'verified', 'creator' => 'OP-002', 'verifier' => 'OP-001', 'days' => 12],
                 ['ref' => 'SET-2603', 'resident' => 'W-002', 'material' => 'pet_bening', 'weight' => 2.000, 'type' => 'sale', 'price' => 2500, 'amount' => 5000, 'points' => 160, 'status' => 'verified', 'creator' => 'OP-001', 'verifier' => 'OP-002', 'days' => 8],
                 ['ref' => 'SET-2604', 'resident' => 'W-003', 'material' => 'aluminium', 'weight' => 0.500, 'type' => 'sale', 'price' => 10000, 'amount' => 5000, 'points' => 60, 'status' => 'verified', 'creator' => 'OP-002', 'verifier' => 'OP-001', 'days' => 5],
-                ['ref' => 'SET-2605', 'resident' => 'W-003', 'material' => 'kardus', 'weight' => 1.250, 'type' => 'donation', 'price' => 0, 'amount' => 0, 'points' => 94, 'status' => 'pending_verification', 'creator' => 'OP-001', 'verifier' => null, 'days' => 0],
-                ['ref' => 'SET-2606', 'resident' => 'W-002', 'material' => 'pet_warna', 'weight' => 0.800, 'type' => 'sale', 'price' => 1600, 'amount' => 1280, 'points' => 48, 'status' => 'needs_correction', 'creator' => 'OP-002', 'verifier' => null, 'days' => 1],
+                ['ref' => 'SET-2605', 'resident' => 'W-003', 'material' => 'kardus', 'weight' => 1.250, 'type' => 'donation', 'price' => 0, 'amount' => 0, 'points' => 94, 'status' => 'verified', 'accepted' => true, 'creator' => 'OP-001', 'verifier' => 'OP-001', 'days' => 0],
+                ['ref' => 'SET-2606', 'resident' => 'W-002', 'material' => 'pet_warna', 'weight' => 0.800, 'type' => 'sale', 'price' => 1600, 'amount' => 0, 'points' => 0, 'status' => 'verified', 'accepted' => false, 'creator' => 'OP-002', 'verifier' => 'OP-002', 'days' => 1],
             ];
 
             $deposits = [];
@@ -143,6 +143,7 @@ class SirkulaDemoSeeder extends Seeder
                         'material_rate_id' => null, // snapshot historis tidak ditautkan ke tarif draft saat ini
                         'type' => $row['type'],
                         'weight_kg' => $row['weight'],
+                        'unit_snapshot' => 'kg',
                         'price_per_kg_snapshot' => $row['price'],
                         'price_effective_date_snapshot' => '2026-10-01',
                         'price_official_at_creation' => true,
@@ -150,8 +151,8 @@ class SirkulaDemoSeeder extends Seeder
                         'donation_multiplier_snapshot' => 1.50,
                         'money_amount' => $row['amount'],
                         'eco_points_awarded' => $row['points'],
-                        'accepted' => true,
-                        'quality_note' => 'Sesuai standar penerimaan',
+                        'accepted' => $row['accepted'] ?? true,
+                        'quality_note' => ($row['accepted'] ?? true) ? 'Sesuai standar penerimaan' : 'Material tidak sesuai standar penerimaan.',
                         'resident_choice_confirmed' => true,
                         'status' => $row['status'],
                         'source' => 'online',
@@ -159,9 +160,9 @@ class SirkulaDemoSeeder extends Seeder
                         'note' => 'Transaksi tercatat',
                         'created_by' => $users[$row['creator']],
                         'verified_by' => $row['verifier'] ? $users[$row['verifier']] : null,
-                        'verified_at' => $row['status'] === 'verified' ? $createdAt : null,
+                        'verified_at' => $createdAt,
                         'corrected_by' => null,
-                        'correction_reason' => $row['status'] === 'needs_correction' ? 'Perlu pemeriksaan ulang.' : null,
+                        'correction_reason' => null,
                         'created_at' => $createdAt,
                         'updated_at' => $createdAt,
                     ]
@@ -171,7 +172,7 @@ class SirkulaDemoSeeder extends Seeder
 
             $payoutRows = [
                 ['ref' => 'PAY-HIST-01', 'deposit' => 'SET-2601', 'resident' => 'W-001', 'amount' => 3750, 'status' => 'paid', 'creator' => 'OP-001', 'approver' => 'ADM-001', 'payer' => 'BEN-001', 'proof' => 'BUKTI-2601', 'days' => 15],
-                ['ref' => 'PAY-2602', 'deposit' => 'SET-2603', 'resident' => 'W-002', 'amount' => 5000, 'status' => 'awaiting_approval', 'creator' => 'OP-001', 'approver' => null, 'payer' => null, 'proof' => null, 'days' => 1],
+                ['ref' => 'PAY-2602', 'deposit' => 'SET-2603', 'resident' => 'W-002', 'amount' => 5000, 'status' => 'saved', 'creator' => 'OP-001', 'approver' => null, 'payer' => null, 'proof' => null, 'days' => 1],
             ];
             $payouts = [];
             foreach ($payoutRows as $row) {
@@ -182,6 +183,7 @@ class SirkulaDemoSeeder extends Seeder
                         'deposit_id' => $deposits[$row['deposit']],
                         'resident_profile_id' => $residents[$row['resident']],
                         'amount' => $row['amount'],
+                        'paid_amount' => $row['status'] === 'paid' ? $row['amount'] : 0,
                         'status' => $row['status'],
                         'created_by' => $users[$row['creator']],
                         'approved_by' => $row['approver'] ? $users[$row['approver']] : null,
@@ -252,44 +254,6 @@ class SirkulaDemoSeeder extends Seeder
                         'verified_at' => $row['verifier'] ? $ago(1) : null, 'note' => $row['note'],
                         'created_at' => $createdAt, 'updated_at' => $now,
                     ]
-                );
-            }
-
-            DB::table('volunteer_tasks')->updateOrInsert(
-                ['reference_code' => 'TASK-2601'],
-                [
-                    'event_id' => $events['EV-001'], 'resident_profile_id' => $residents['W-003'],
-                    'description' => 'Membantu memilah dan menata material hasil kerja bakti',
-                    'status' => 'pending_verification', 'points_awarded' => 50,
-                    'created_by' => $users['PK-001'], 'verified_by' => null, 'verified_at' => null,
-                    'note' => null, 'created_at' => $ago(0), 'updated_at' => $now,
-                ]
-            );
-
-            $educationRows = [
-                ['code' => 'EDU-01', 'title' => 'Menyiapkan kardus dan karton', 'minutes' => 2, 'category' => 'Pemilahan dasar', 'content' => 'Lipat kardus agar mudah disimpan. Pastikan kering, pisahkan dari sisa makanan, minyak, dan bahan yang membuatnya basah. Simpan di tempat tidak lembap.', 'checklist' => ['Kardus kering dan tidak berminyak', 'Dilipat atau dirapikan', 'Disimpan terpisah dari sampah basah']],
-                ['code' => 'EDU-02', 'title' => 'Membedakan botol PET bening dan berwarna', 'minutes' => 2, 'category' => 'Jenis material', 'content' => 'Pisahkan botol bening dari botol berwarna. Kosongkan isinya dan ikuti petunjuk petugas tentang tutup atau label. Jika ragu, tanyakan sebelum mencampurnya.', 'checklist' => ['Botol dikosongkan', 'Bening dan berwarna dipisahkan', 'Jenis yang meragukan ditanyakan ke petugas']],
-                ['code' => 'EDU-03', 'title' => 'Membuat setoran lebih bersih', 'minutes' => 3, 'category' => 'Kebiasaan rumah tangga', 'content' => 'Pisahkan material sejak dari rumah. Material yang bersih dan kering lebih mudah ditimbang dan disalurkan. Jangan memasukkan material yang berisi sisa cairan, tajam, atau berbahaya tanpa arahan petugas.', 'checklist' => ['Sampah dipilah dari rumah', 'Material sesuai standar penerimaan', 'Dibawa pada jadwal yang diinformasikan']],
-                ['code' => 'EDU-04', 'title' => 'Memahami pilihan Jual dan Donasi', 'minutes' => 2, 'category' => 'Bank sampah', 'content' => 'Jual berarti warga menerima pembayaran rupiah sesuai berat aktual dan harga beli RW yang berlaku, serta EcoPoints jual. Donasi berarti tidak ada pembayaran tunai kepada warga, namun EcoPoints material memperoleh bonus 50%. Pastikan pilihan dicatat benar sebelum transaksi disahkan.', 'checklist' => ['Saya memahami nominal rupiah perlu tarif aktif', 'Saya memahami donasi tidak dibayar tunai', 'Pilihan dikonfirmasi sebelum transaksi disahkan']],
-                ['code' => 'EDU-05', 'title' => 'Mengurangi barang yang menumpuk', 'minutes' => 3, 'category' => 'Pemanfaatan', 'content' => 'Simpan material yang sudah dipilah dalam kondisi aman, lalu cek jadwal setoran. Barang guna ulang dan produk pemanfaatan sebaiknya dipilih atau dibuat berdasarkan kebutuhan nyata, bukan hanya karena bahan tersedia.', 'checklist' => ['Material disimpan dengan aman', 'Jadwal setoran diketahui', 'Produk dibuat berdasarkan kebutuhan']],
-            ];
-            $educationIds = [];
-            foreach ($educationRows as $row) {
-                DB::table('education_materials')->updateOrInsert(
-                    ['code' => $row['code']],
-                    [
-                        'title' => $row['title'], 'category' => $row['category'], 'duration_minutes' => $row['minutes'],
-                        'content' => $row['content'], 'checklist' => json_encode($row['checklist'], JSON_UNESCAPED_UNICODE),
-                        'status' => 'published', 'created_by' => $users['ADM-001'], 'approved_by' => null,
-                        'published_at' => $now, 'created_at' => $now, 'updated_at' => $now,
-                    ]
-                );
-                $educationIds[$row['code']] = DB::table('education_materials')->where('code', $row['code'])->value('id');
-            }
-            foreach (['EDU-01', 'EDU-02'] as $code) {
-                DB::table('education_completions')->updateOrInsert(
-                    ['education_material_id' => $educationIds[$code], 'resident_profile_id' => $residents['W-001']],
-                    ['points_awarded' => 30, 'completed_at' => $ago(5), 'created_at' => $ago(5), 'updated_at' => $now]
                 );
             }
 
@@ -422,38 +386,16 @@ class SirkulaDemoSeeder extends Seeder
                 ]
             );
 
-            $expenseRows = [
-                ['ref' => 'EXP-HIST-01', 'category' => 'Pembelian reward', 'amount' => 100000, 'description' => 'Pengadaan reward', 'proof' => 'BUKTI-EXP-001', 'external_reference' => null, 'status' => 'paid', 'created_by' => 'BEN-001', 'approved_by' => null, 'paid_by' => 'BEN-001', 'days' => 5],
-                ['ref' => 'EXP-2601', 'category' => 'Pemeliharaan tempat pemilahan', 'amount' => 75000, 'description' => 'Pembelian kantong sortir dan perlengkapan kebersihan', 'proof' => 'NOTA-2601', 'external_reference' => 'INV-2601', 'status' => 'awaiting_approval', 'created_by' => 'BEN-001', 'approved_by' => null, 'paid_by' => null, 'days' => 1],
-            ];
-            $expenses = [];
-            foreach ($expenseRows as $row) {
-                $createdAt = $ago($row['days']);
-                DB::table('expenses')->updateOrInsert(
-                    ['reference_code' => $row['ref']],
-                    [
-                        'category' => $row['category'], 'amount' => $row['amount'], 'description' => $row['description'],
-                        'proof_reference' => $row['proof'], 'external_reference' => $row['external_reference'], 'status' => $row['status'],
-                        'created_by' => $users[$row['created_by']],
-                        'approved_by' => $row['approved_by'] ? $users[$row['approved_by']] : null,
-                        'paid_by' => $row['paid_by'] ? $users[$row['paid_by']] : null,
-                        'approved_at' => null, 'paid_at' => $row['status'] === 'paid' ? $createdAt : null,
-                        'note' => null, 'created_at' => $createdAt, 'updated_at' => $now,
-                    ]
-                );
-                $expenses[$row['ref']] = DB::table('expenses')->where('reference_code', $row['ref'])->value('id');
-            }
-
             $outflowCreatedAt = $ago(10);
             DB::table('material_outflows')->updateOrInsert(
                 ['reference_code' => 'OUT-HIST-01'],
                 [
                     'material_id' => $materialIds['pet_bening'], 'weight_kg' => 8,
-                    'destination' => 'Pengepul', 'destination_name' => 'Mitra Daur Ulang Kiaracondong',
+                    'destination' => 'pengepul', 'destination_name' => 'Mitra Daur Ulang Kiaracondong',
                     'amount_reported_rp' => 450000, 'amount_received_rp' => 450000,
                     'payment_status' => 'received', 'proof_reference' => 'BUKTI-OUT-001',
                     'payment_checked_by' => $users['BEN-001'], 'payment_received_at' => $outflowCreatedAt,
-                    'status' => 'completed', 'created_by' => $users['OP-001'], 'verified_by' => null,
+                    'status' => 'verified', 'created_by' => $users['OP-001'], 'verified_by' => $users['OP-001'],
                     'verified_at' => null, 'note' => null, 'created_at' => $outflowCreatedAt, 'updated_at' => $now,
                 ]
             );
@@ -462,7 +404,7 @@ class SirkulaDemoSeeder extends Seeder
             $cashRows = [
                 ['ref' => 'KAS-001', 'date_days' => 10, 'direction' => 'in', 'category' => 'Penjualan material ke pengepul', 'amount' => 450000, 'description' => 'Pembayaran dari mitra pengepul', 'proof' => 'BUKTI-OUT-001', 'source_type' => 'App\\Models\\MaterialOutflow', 'source_id' => $outflowId, 'creator' => 'BEN-001'],
                 ['ref' => 'KAS-002', 'date_days' => 7, 'direction' => 'in', 'category' => 'Donasi uang', 'amount' => 50000, 'description' => 'Donasi terverifikasi — nama tampilan alias', 'proof' => 'BUKTI-DON-001', 'source_type' => 'App\\Models\\Donation', 'source_id' => $donations['DON-HIST-01'], 'creator' => 'BEN-001'],
-                ['ref' => 'KAS-003', 'date_days' => 5, 'direction' => 'out', 'category' => 'Pembelian reward', 'amount' => 100000, 'description' => 'Pengadaan reward', 'proof' => 'BUKTI-EXP-001', 'source_type' => 'App\\Models\\Expense', 'source_id' => $expenses['EXP-HIST-01'], 'creator' => 'BEN-001'],
+                ['ref' => 'KAS-003', 'date_days' => 5, 'direction' => 'out', 'category' => 'Pembelian reward', 'amount' => 100000, 'description' => 'Pengadaan reward', 'proof' => 'BUKTI-EXP-001', 'source_type' => null, 'source_id' => null, 'creator' => 'BEN-001'],
                 ['ref' => 'KAS-004', 'date_days' => 15, 'direction' => 'out', 'category' => 'Pembayaran setoran warga', 'amount' => 3750, 'description' => 'Pembayaran SET-2601', 'proof' => 'BUKTI-PAY-001', 'source_type' => 'App\\Models\\Payout', 'source_id' => $payouts['PAY-HIST-01'], 'creator' => 'BEN-001'],
             ];
             foreach ($cashRows as $row) {
@@ -494,13 +436,6 @@ class SirkulaDemoSeeder extends Seeder
                 ['resident' => 'W-001', 'points' => 50, 'description' => 'Kehadiran kegiatan RW', 'ref' => 'EV-H3', 'days' => 11],
                 ['resident' => 'W-001', 'points' => 50, 'description' => 'Kehadiran kegiatan RW', 'ref' => 'EV-H4', 'days' => 10],
                 ['resident' => 'W-001', 'points' => 50, 'description' => 'Kehadiran kegiatan RW', 'ref' => 'EV-H5', 'days' => 9],
-                ['resident' => 'W-001', 'points' => 50, 'description' => 'Tugas tambahan relawan', 'ref' => 'TASK-H1', 'days' => 10],
-                ['resident' => 'W-001', 'points' => 50, 'description' => 'Tugas tambahan relawan', 'ref' => 'TASK-H2', 'days' => 9],
-                ['resident' => 'W-001', 'points' => 30, 'description' => 'Materi edukasi selesai', 'ref' => 'EDU-H1', 'days' => 9],
-                ['resident' => 'W-001', 'points' => 30, 'description' => 'Materi edukasi selesai', 'ref' => 'EDU-H2', 'days' => 8],
-                ['resident' => 'W-001', 'points' => 30, 'description' => 'Materi edukasi selesai', 'ref' => 'EDU-H3', 'days' => 7],
-                ['resident' => 'W-001', 'points' => 30, 'description' => 'Materi edukasi selesai', 'ref' => 'EDU-H4', 'days' => 6],
-                ['resident' => 'W-001', 'points' => 30, 'description' => 'Materi edukasi selesai', 'ref' => 'EDU-H5', 'days' => 5],
                 ['resident' => 'W-001', 'points' => 50, 'description' => 'Berhasil menjual produk pemanfaatan', 'ref' => 'PROD-S1', 'days' => 7],
                 ['resident' => 'W-001', 'points' => 50, 'description' => 'Berhasil menjual produk pemanfaatan', 'ref' => 'PROD-S2', 'days' => 6],
                 ['resident' => 'W-001', 'points' => 50, 'description' => 'Berhasil menjual produk pemanfaatan', 'ref' => 'PROD-S3', 'days' => 5],
@@ -541,31 +476,6 @@ class SirkulaDemoSeeder extends Seeder
                 );
             }
 
-            /* -------------------------------------------------------------
-             * 7. Impor offline, audit, pengaturan, pengumuman, kesiapan RW.
-             * ----------------------------------------------------------- */
-            DB::table('import_batches')->updateOrInsert(
-                ['reference_code' => 'IMP-2601'],
-                [
-                    'file_name' => 'catatan_setoran_offline.csv', 'storage_path' => null,
-                    'status' => 'pending_review', 'total_rows' => 1, 'valid_rows' => 1, 'error_rows' => 0,
-                    'uploaded_by' => $users['OP-001'], 'reviewed_by' => null, 'imported_at' => null,
-                    'created_at' => $ago(1), 'updated_at' => $now,
-                ]
-            );
-            $batchId = DB::table('import_batches')->where('reference_code', 'IMP-2601')->value('id');
-            DB::table('import_batch_rows')->updateOrInsert(
-                ['offline_transaction_id' => 'OFF-2026-002'],
-                [
-                    'import_batch_id' => $batchId, 'row_number' => 2, 'occurred_at' => '2026-10-29 00:00:00',
-                    'resident_code' => 'W-003', 'activity_type' => 'donation', 'material_code' => 'kardus',
-                    'weight_kg' => 1.500, 'value_rp' => 0,
-                    'raw_data' => json_encode(['residentName' => 'Ibu Diah Lestari', 'materialName' => 'Kardus / karton', 'note' => 'Dicatat saat koneksi terputus'], JSON_UNESCAPED_UNICODE),
-                    'validation_errors' => json_encode([], JSON_UNESCAPED_UNICODE),
-                    'status' => 'pending_review', 'deposit_id' => null, 'created_at' => $ago(1), 'updated_at' => $now,
-                ]
-            );
-
             DB::table('audit_logs')->updateOrInsert(
                 ['action' => 'Pemeriksaan audit log', 'user_id' => $users['ADM-001'], 'reason' => 'Riwayat pencatatan awal'],
                 [
@@ -579,14 +489,10 @@ class SirkulaDemoSeeder extends Seeder
             $settings = [
                 ['key' => 'rounding', 'group' => 'points', 'value' => 'nearest-half-up'],
                 ['key' => 'leaderboardDefault', 'group' => 'privacy', 'value' => 'alias'],
-                ['key' => 'backupCadence', 'group' => 'backup', 'value' => 'Belum ditetapkan'],
                 ['key' => 'priceEffectiveDate', 'group' => 'tariff', 'value' => '2026-10-30'],
                 ['key' => 'priceOfficial', 'group' => 'tariff', 'value' => false],
-                ['key' => 'reservedOfflineIds', 'group' => 'import', 'value' => ['OFF-HIST-001']],
                 ['key' => 'rankThresholds', 'group' => 'points', 'value' => EcoRank::tiers()],
-                ['key' => 'educationPoints', 'group' => 'points', 'value' => 30],
                 ['key' => 'attendancePoints', 'group' => 'points', 'value' => 50],
-                ['key' => 'volunteerPoints', 'group' => 'points', 'value' => 50],
                 ['key' => 'productSalePoints', 'group' => 'points', 'value' => 50],
                 ['key' => 'productPurchasePoints', 'group' => 'points', 'value' => 30],
                 ['key' => 'supportPointsPerThousand', 'group' => 'points', 'value' => 1],
@@ -598,42 +504,6 @@ class SirkulaDemoSeeder extends Seeder
                 );
             }
 
-            DB::table('announcements')->updateOrInsert(
-                ['reference_code' => 'NOTE-01'],
-                [
-                    'title' => 'Tarif material',
-                    'message' => 'Periksa harga beli material dan tanggal mulai berlakunya sebelum menerima setoran.',
-                    'type' => 'warning', 'is_active' => true, 'starts_at' => null, 'ends_at' => null,
-                    'created_by' => $users['ADM-001'], 'created_at' => $now, 'updated_at' => $now,
-                ]
-            );
-
-            $decisionRows = [
-                ['DEC-01', 'Harga beli rupiah per kg', 'Tetapkan harga beli per kilogram, tanggal mulai berlaku, dan dasar penetapan melalui keputusan pengurus.'],
-                ['DEC-02', 'Kapan uang dibayarkan kepada warga', 'Tetapkan pembayaran langsung atau antrean pembayaran, berikut bukti dan SOP.'],
-                ['DEC-03', 'Pihak yang menyetujui pengeluaran/pembayaran', 'Tunjuk approver yang berbeda dari pembuat transaksi dan petugas pengganti.'],
-                ['DEC-04', 'Pemilik proses katalog produk', 'Pastikan pemetaan katalog ke Pengelola Kegiatan diterima atau tunjuk role resmi lain.'],
-                ['DEC-05', 'Bukti transaksi produk pembeli luar RW', 'Tetapkan bukti minimum dan pihak yang memeriksa sebelum poin penjual diberikan.'],
-                ['DEC-06', 'Pembulatan poin pecahan', 'Konfirmasi aturan pembulatan yang konsisten pada web dan pencatatan manual.'],
-                ['DEC-07', 'Tampilan nama pada leaderboard', 'Tetapkan nama/alias default dan cara warga atau donatur mengubah preferensi.'],
-                ['DEC-08', 'Retensi bukti dan jadwal backup', 'Tentukan penanggung jawab, penyimpanan aman, lama retensi, dan prosedur pemulihan.'],
-                ['DEC-09', 'Batas waktu sengketa produk', 'Tetapkan batas pemeriksaan serta kanal pengiriman bukti/keberatan.'],
-                ['DEC-10', 'Tarif lama saat pencatatan offline', 'Tentukan cara membuktikan tarif yang berlaku pada tanggal transaksi dan approver-nya.'],
-                ['DEC-11', 'Ketersediaan kas pembayaran warga', 'Tentukan prioritas antrean dan cara melaporkan total yang masih terutang.'],
-                ['DEC-12', 'Akses laporan rinci untuk pengurus RW', 'Pilih role resmi sesuai tugas dan kebutuhan minimum; jangan menggunakan akun bersama.'],
-                ['DEC-13', 'Konfirmasi pilihan Jual atau Donasi', 'Sepakati bahwa pilihan ditampilkan, dikonfirmasi warga, dan tidak diganti tanpa catatan.'],
-            ];
-            foreach ($decisionRows as $index => $decision) {
-                DB::table('readiness_items')->updateOrInsert(
-                    ['code' => $decision[0]],
-                    ['category' => 'Keputusan operasional', 'title' => $decision[1], 'description' => $decision[2], 'sort_order' => $index + 1, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now]
-                );
-                $itemId = DB::table('readiness_items')->where('code', $decision[0])->value('id');
-                DB::table('readiness_checks')->updateOrInsert(
-                    ['readiness_item_id' => $itemId],
-                    ['is_completed' => false, 'completed_by' => null, 'completed_at' => null, 'note' => null, 'created_at' => $now, 'updated_at' => $now]
-                );
-            }
         });
     }
 }

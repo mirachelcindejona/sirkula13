@@ -26,8 +26,7 @@
         @forelse ($events as $event)
             @php($registration = $profile ? $event->registrations->firstWhere('resident_profile_id', $profile->id) : null)
             <article class="card event-card">
-                @php($poster = str_contains(strtolower($event->title), 'pilah') ? 'images/events/kelas-pilah.jpg' : 'images/events/kerja-bakti.jpg')
-                <div class="event-poster"><img src="{{ asset($poster) }}" alt="Poster {{ $event->title }}"></div>
+                <div class="event-poster"><img src="{{ $event->posterUrl() }}" alt="Poster {{ $event->title }}"></div>
                 <div class="card-head">
                     <span class="badge success">{{ $event->event_date?->locale('id')->translatedFormat('d M Y') }}</span>
                     <span class="point-pill">+{{ $event->attendance_points }} poin hadir</span>

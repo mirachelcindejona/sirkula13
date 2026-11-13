@@ -52,6 +52,7 @@
     </div>
     <h2 class="section-title">Daftar role yang diberikan</h2>
     <div class="card">
+        <x-table-toolbar placeholder="Cari nama atau email" />
         <div class="table-wrap">
             <table>
                 <thead><tr><th>Nama</th><th>Role aktif</th><th>Akses</th></tr></thead>

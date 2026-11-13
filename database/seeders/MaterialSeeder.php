@@ -31,6 +31,7 @@ class MaterialSeeder extends Seeder
                     'short_name' => $item['short_name'],
                     'acceptance_standard' => $item['acceptance_standard'],
                     'icon' => $item['icon'],
+                    'unit' => 'kg',
                     'is_active' => true,
                     'updated_at' => now(),
                     'created_at' => now(),

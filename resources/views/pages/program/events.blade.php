@@ -1,18 +1,34 @@
 @extends('layouts.app')
-@section('title', 'Daftar kegiatan')
-@section('heading', 'Kegiatan')
-@section('eyebrow', 'Program')
+@section('title', 'Kegiatan dan kehadiran')
+@section('heading', 'Kegiatan & kehadiran')
+@section('eyebrow', 'Pengelola kegiatan')
+@section('subtitle', 'Kegiatan yang belum berlangsung masih bisa diubah. Yang sudah lewat tetap bisa dilihat dan dicatat kehadirannya.')
+@section('actions')
+    <a class="btn primary" href="{{ route('program.events.create') }}">Tambah kegiatan</a>
+@endsection
 @section('content')
-    <div class="grid gap-4 md:grid-cols-2">
-        @forelse ($events as $event)
-            <article class="card p-5">
-                <div class="flex justify-between gap-3"><h2 class="text-lg font-extrabold">{{ $event->title }}</h2><x-badge :status="$event->status" /></div>
-                <p class="mt-2 text-sm text-muted">{{ $event->event_date?->translatedFormat('d F Y') }} · {{ $event->location }}</p>
-                <p class="mt-2 text-sm">Kuota {{ $event->quota ?: '—' }} · hadir {{ $event->attendance_points }} poin</p>
-            </article>
-        @empty
-            <p class="text-sm text-muted">Belum ada kegiatan.</p>
-        @endforelse
+    <div class="card">
+        <x-table-toolbar placeholder="Cari nama, lokasi, atau kategori" :filters="[['name' => 'status', 'label' => 'Semua status', 'options' => ['published' => 'Tayang', 'draft' => 'Draft']]]" />
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Kegiatan</th><th>Jadwal</th><th>Lokasi</th><th>Poin</th><th>Hadir</th><th>Status</th><th></th></tr></thead>
+                <tbody>
+                    @forelse ($events as $event)
+                        <tr>
+                            <td><strong>{{ $event->title }}</strong><br><span class="small muted">{{ $event->category ?: 'Umum' }}</span></td>
+                            <td>{{ $event->event_date?->locale('id')->translatedFormat('d M Y') }}<br><span class="small muted">{{ $event->event_time ?: 'Waktu menyusul' }}</span></td>
+                            <td>{{ $event->location }}</td>
+                            <td>{{ $event->attendance_points }}</td>
+                            <td>{{ $event->attendances_count }}</td>
+                            <td><x-badge :status="$event->status" /></td>
+                            <td><a class="btn small-btn secondary" href="{{ route('program.events.show', $event) }}">Detail</a></td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="7">Belum ada kegiatan.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        {{ $events->links() }}
     </div>
-    {{ $events->links() }}
 @endsection

@@ -16,13 +16,9 @@ Route::middleware(['auth', 'role:superadmin'])
         Route::get('/peran', [AdminController::class, 'roles'])->name('roles');
         Route::post('/peran', [AdminController::class, 'assignRole'])->name('roles.store');
         Route::get('/tarif', [AdminController::class, 'tariff'])->name('tariff');
-        Route::get('/publikasi', [AdminController::class, 'publication'])->name('publication');
+        Route::post('/tarif', [AdminController::class, 'storeTariff'])->name('tariff.store');
         Route::get('/fraud', [AdminController::class, 'fraud'])->name('fraud');
-        Route::get('/kas', [AdminController::class, 'cash'])->name('cash');
-        Route::get('/impor', [AdminController::class, 'import'])->name('import');
-        Route::get('/kesiapan', [AdminController::class, 'readiness'])->name('readiness');
         Route::get('/audit', [AdminController::class, 'audit'])->name('audit');
-        Route::get('/cadangan', [AdminController::class, 'backup'])->name('backup');
 
         Route::resource('materials', MaterialController::class)->except(['show', 'destroy']);
         Route::patch('materials/{material}/toggle-status', [MaterialController::class, 'toggleStatus'])->name('materials.toggle-status');

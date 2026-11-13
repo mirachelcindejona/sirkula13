@@ -6,13 +6,12 @@
 @section('content')
     @if ($canRegister)
         <div class="callout"><x-icon name="users" /><div><strong>Direktori internal pengurus</strong>Cari nama atau nomor kontak sebelum membuat ID baru agar tidak terjadi data ganda.</div></div>
-        <div class="grid two gap-top">
-            <div class="card">
+        <div class="card gap-top">
                 <h3 class="card-title">Buat profil warga tanpa HP</h3>
                 <p class="card-subtitle">Untuk warga yang belum memakai akun online. ID dipakai untuk pencatatan, bukan untuk masuk.</p>
                 <form method="POST" action="{{ route('bank.residents.store') }}" class="gap-top" data-confirm="Buat ID warga baru? Pastikan data yang sama belum ada.">
                     @csrf
-                    <div class="form-grid">
+                    <div class="form-grid form-stack">
                         <div class="field full">
                             <label for="manual-name">Nama warga <span class="required">*</span></label>
                             <input id="manual-name" name="name" required maxlength="150" value="{{ old('name') }}">
@@ -54,32 +53,22 @@
                         <button class="btn primary" type="submit">Buat ID warga</button>
                     </div>
                 </form>
-            </div>
-            <div class="card">
-                <h3 class="card-title">Cari profil warga</h3>
-                <form method="GET" action="{{ route('bank.residents') }}">
-                    <div class="field">
-                        <label for="resident-search">Pencarian warga</label>
-                        <input id="resident-search" name="q" value="{{ $search }}" placeholder="Ketik nama, ID, RT, atau nomor kontak">
-                    </div>
-                    <div class="form-actions">
-                        <button class="btn secondary" type="submit">Cari</button>
-                    </div>
-                </form>
-            </div>
         </div>
-    @else
-        <form method="GET" action="{{ route('bank.residents') }}" class="card">
-            <div class="field">
-                <label for="resident-search">Cari nama, ID warga, nomor HP, RT, atau nomor rumah</label>
-                <input id="resident-search" name="q" value="{{ $search }}" placeholder="Contoh: Sari, RT 03, 12A">
-            </div>
-            <div class="form-actions"><button class="btn secondary" type="submit">Cari</button></div>
-        </form>
     @endif
 
     <h2 class="section-title">Warga terdaftar</h2>
     <div class="card">
+        <form method="GET" action="{{ route('bank.residents') }}" class="table-search" role="search">
+            <label class="sr-only" for="resident-search">Cari nama, ID warga, nomor HP, RT, atau nomor rumah</label>
+            <input id="resident-search" name="q" value="{{ $search }}" placeholder="Cari nama, ID, RT, atau kontak" enterkeyhint="search">
+            <select name="status" aria-label="Status akun" onchange="this.form.requestSubmit()">
+                <option value="">Semua status</option>
+                <option value="active" @selected(request('status') === 'active')>Aktif</option>
+                <option value="inactive" @selected(request('status') === 'inactive')>Nonaktif</option>
+                <option value="rejected" @selected(request('status') === 'rejected')>Ditolak</option>
+            </select>
+            <button class="icon-button search-submit" type="submit" aria-label="Cari"><x-icon name="search" /></button>
+        </form>
         <div class="table-wrap">
             <table>
                 <thead>
@@ -107,13 +96,15 @@
                             </td>
                             @if ($canRegister)
                                 <td>
-                                    @if ($resident->status === 'active')
+                                    @if ($resident->status === 'rejected')
+                                        <span class="small muted">Status final</span>
+                                    @elseif ($resident->status === 'active')
                                         <form method="POST" action="{{ route('admin.residents.status', $resident) }}" data-confirm="Nonaktifkan akun {{ $resident->full_name }}? Warga tidak bisa masuk sampai diaktifkan kembali.">
                                             @csrf
                                             <input type="hidden" name="status" value="inactive">
                                             <button class="btn small-btn danger" type="submit">Nonaktifkan</button>
                                         </form>
-                                    @else
+                                    @elseif ($resident->status === 'inactive')
                                         <form method="POST" action="{{ route('admin.residents.status', $resident) }}" data-confirm="Aktifkan kembali akun {{ $resident->full_name }}?">
                                             @csrf
                                             <input type="hidden" name="status" value="active">

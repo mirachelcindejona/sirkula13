@@ -4,20 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
 use App\Models\CashTransaction;
-use App\Models\Deposit;
-use App\Models\Event;
-use App\Models\ImportBatch;
 use App\Models\MaterialRate;
-use App\Models\Payout;
-use App\Models\Product;
 use App\Models\ProductOrder;
-use App\Models\ReadinessItem;
 use App\Models\ResidentProfile;
 use App\Models\Role;
 use App\Models\User;
+use App\Support\Listing;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class AdminController extends Controller
@@ -26,23 +20,24 @@ class AdminController extends Controller
     {
         $cashIn = (float) CashTransaction::query()->where('direction', 'in')->sum('amount');
         $cashOut = (float) CashTransaction::query()->where('direction', 'out')->sum('amount');
-        $openDecisions = (int) DB::table('readiness_items')->where('is_active', true)->whereNotIn('id', DB::table('readiness_checks')->where('is_completed', true)->pluck('readiness_item_id'))->count();
 
         return view('pages.admin.dashboard', [
-            'queue' => Deposit::query()->where('status', 'submitted')->count()
-                + User::query()->where('status', 'pending')->count()
-                + Payout::query()->where('status', 'awaiting_approval')->count(),
+            'queue' => User::query()->whereIn('status', ['pending', 'needs_info'])->count(),
             'held' => ProductOrder::query()->where('status', 'held_for_review')->count(),
             'cashBalance' => $cashIn - $cashOut,
-            'openDecisions' => $openDecisions,
         ]);
     }
 
     public function approvals(): View
     {
+        $pending = User::query()->with('residentProfile')->whereIn('status', ['pending', 'needs_info'])->latest();
+        $accounts = User::query()->with(['residentProfile', 'roles'])->whereNotIn('status', ['pending', 'needs_info'])->latest();
+        Listing::search($pending, ['name', 'email', 'phone']);
+        Listing::search($accounts, ['name', 'email', 'phone']);
+
         return view('pages.admin.approvals', [
-            'users' => User::query()->with('residentProfile')->whereIn('status', ['pending', 'needs_info'])->latest()->paginate(10, ['*'], 'menunggu')->withQueryString(),
-            'accounts' => User::query()->with(['residentProfile', 'roles'])->whereNotIn('status', ['pending', 'needs_info'])->latest()->paginate(10, ['*'], 'akun')->withQueryString(),
+            'users' => $pending->listing('menunggu'),
+            'accounts' => $accounts->listing('akun'),
         ]);
     }
 
@@ -95,6 +90,10 @@ class AdminController extends Controller
             'status' => ['required', 'in:active,inactive'],
         ])['status'];
 
+        if ($resident->status === 'rejected' || $resident->user?->status === 'rejected') {
+            return back()->with('error', 'Akun yang ditolak tidak dapat diubah statusnya.');
+        }
+
         if ($resident->user_id === $request->user()->id) {
             return back()->with('warning', 'Anda tidak dapat menonaktifkan akun yang sedang dipakai.');
         }
@@ -117,7 +116,7 @@ class AdminController extends Controller
         return view('pages.admin.roles', [
             'roles' => Role::query()->where('slug', '!=', 'superadmin')->orderBy('name')->get(),
             'staff' => User::query()->where('status', 'active')->orderBy('name')->get(),
-            'accounts' => User::query()->with('roles')->where('status', 'active')->orderBy('name')->paginate(10)->withQueryString(),
+            'accounts' => tap(User::query()->with('roles')->where('status', 'active')->orderBy('name'), fn ($query) => Listing::search($query, ['name', 'email']))->listing(),
         ]);
     }
 
@@ -150,64 +149,66 @@ class AdminController extends Controller
 
     public function tariff(): View
     {
+        $materials = \App\Models\Material::query()->where('is_active', true)->orderBy('name')->get();
+        $current = MaterialRate::query()->orderByDesc('effective_from')->get()->unique('material_id')->keyBy('material_id');
+
         return view('pages.admin.tariff', [
-            'rates' => MaterialRate::query()->with('material')->orderByDesc('effective_from')->paginate(10),
+            'materials' => $materials,
+            'current' => $current,
+            'history' => tap(MaterialRate::query()->with('material')->orderByDesc('effective_from'), function ($query): void {
+                Listing::search($query, [], ['material' => 'name']);
+                if ($status = Listing::oneOf('status', ['draft', 'approved'])) {
+                    $query->where('status', $status);
+                }
+            })->listing(),
         ]);
     }
 
-    public function publication(): View
+    public function storeTariff(Request $request): RedirectResponse
     {
-        return view('pages.admin.publication', [
-            'events' => Event::query()->latest('event_date')->paginate(8, ['*'], 'kegiatan'),
-            'products' => Product::query()->latest()->paginate(8, ['*'], 'produk'),
+        $data = $request->validate([
+            'price' => ['required', 'array'],
+            'price.*' => ['required', 'numeric', 'min:0'],
+            'points' => ['required', 'array'],
+            'points.*' => ['required', 'numeric', 'min:0', 'multiple_of:2'],
+            'effective_from' => ['required', 'date'],
+            'official' => ['required', 'in:0,1'],
+            'reason' => ['required', 'string', 'max:1000'],
         ]);
+
+        $status = $data['official'] === '1' ? 'approved' : 'draft';
+        foreach ($data['points'] as $materialId => $points) {
+            $rate = MaterialRate::query()->firstOrNew([
+                'material_id' => $materialId,
+                'effective_from' => $data['effective_from'],
+            ]);
+            $before = $rate->exists ? $rate->only(['buy_price_per_kg', 'eco_points_per_kg', 'status']) : null;
+            $rate->forceFill([
+                'buy_price_per_kg' => $data['price'][$materialId] ?? 0,
+                'eco_points_per_kg' => (int) round((float) $points),
+                'donation_multiplier' => 1.5,
+                'status' => $status,
+                'approved_by' => $status === 'approved' ? $request->user()->id : null,
+                'reason' => $data['reason'],
+            ])->save();
+            \App\Support\Audit::record('Mengubah tarif material', $rate, $before, $rate->only(['buy_price_per_kg', 'eco_points_per_kg', 'status']), $data['reason']);
+        }
+
+        return back()->with('success', 'Tarif disimpan. Poin donasi dihitung otomatis 1,5 kali poin jual.');
     }
 
     public function fraud(): View
     {
         return view('pages.admin.fraud', [
-            'deposits' => Deposit::query()->with(['residentProfile', 'material'])->where('status', 'fraud_flag')->latest()->paginate(10),
-        ]);
-    }
-
-    public function cash(): View
-    {
-        return view('pages.admin.cash', [
-            'rows' => CashTransaction::query()->orderByDesc('transaction_at')->paginate(12),
-        ]);
-    }
-
-    public function import(): View
-    {
-        return view('pages.admin.import', [
-            'batches' => ImportBatch::query()->latest()->paginate(10),
-        ]);
-    }
-
-    public function readiness(): View
-    {
-        return view('pages.admin.readiness', [
-            'items' => ReadinessItem::query()->orderBy('sort_order')->paginate(8),
+            'orders' => tap(ProductOrder::query()->with(['product', 'buyer', 'seller'])->where('status', 'held_for_review')->latest(), fn ($query) => Listing::search($query, ['reference_code', 'held_reason'], ['product' => 'name', 'buyer' => 'full_name']))->listing(),
         ]);
     }
 
     public function audit(): View
     {
         return view('pages.admin.audit', [
-            'logs' => AuditLog::query()->latest('created_at')->paginate(15)->withQueryString(),
+            'logs' => tap(AuditLog::query()->latest('created_at'), fn ($query) => Listing::search($query, ['action', 'role_name', 'reason']))->listing(),
         ]);
     }
 
-    public function backup(): View
-    {
-        return view('pages.admin.backup', [
-            'tables' => [
-                'users' => User::query()->count(),
-                'resident_profiles' => ResidentProfile::query()->count(),
-                'deposits' => Deposit::query()->count(),
-                'rewards' => DB::table('rewards')->count(),
-                'materials' => DB::table('materials')->count(),
-            ],
-        ]);
-    }
 }

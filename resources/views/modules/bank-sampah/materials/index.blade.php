@@ -31,12 +31,13 @@
     <div class="card gap-top">
         <div class="table-wrap">
             <table>
-                <thead><tr><th>Kode</th><th>Nama</th><th>Standar</th><th>Status</th><th>Tindakan</th></tr></thead>
+                <thead><tr><th>Kode</th><th>Nama</th><th>Satuan</th><th>Standar</th><th>Status</th><th>Tindakan</th></tr></thead>
                 <tbody>
                     @forelse ($materials as $material)
                         <tr>
                             <td><strong>{{ $material->code }}</strong></td>
                             <td>{{ $material->icon }} {{ $material->name }}</td>
+                            <td>{{ $material->unitLabel() }}</td>
                             <td>{{ $material->acceptance_standard ?: '—' }}</td>
                             <td><x-badge :status="$material->is_active ? 'active' : 'inactive'" /></td>
                             <td>
@@ -51,7 +52,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5">Belum ada jenis material.</td></tr>
+                        <tr><td colspan="6">Belum ada jenis material.</td></tr>
                     @endforelse
                 </tbody>
             </table>

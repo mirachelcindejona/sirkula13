@@ -55,10 +55,15 @@ class UpdateMaterialRequest extends FormRequest
                 'max:20',
             ],
 
+            'unit' => ['required', 'in:kg,g,liter,pcs,lembar,ikat'],
+
             'is_active' => [
                 'required',
                 'boolean',
             ],
+
+            'buy_price_per_kg' => ['required', 'numeric', 'min:0'],
+            'eco_points_per_kg' => ['required', 'integer', 'min:0', 'multiple_of:2'],
         ];
     }
 

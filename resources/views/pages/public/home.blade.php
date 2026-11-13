@@ -21,7 +21,7 @@
         <div>
             <div class="eyebrow">Tentang program</div>
             <h2>Bank sampah yang lebih mudah diikuti dan tercatat.</h2>
-            <p>Warga dapat memilah material dari rumah, menyetorkannya ke bank sampah, lalu memilih untuk menjual atau mendonasikannya. Setiap kontribusi yang sudah diverifikasi tercatat dalam sistem.</p>
+            <p>Warga dapat memilah material dari rumah, menyetorkannya ke bank sampah, lalu memilih untuk menjual atau mendonasikannya. Setoran yang diterima langsung tercatat beserta poinnya.</p>
             <a class="text-link" href="{{ route('public.profile') }}">Kenali program RW 13 <x-icon name="arrow-right" /></a>
         </div>
         <div class="public-fact-card">
@@ -34,9 +34,10 @@
         <div class="section-heading-row"><div><div class="eyebrow">Layanan RW 13</div><h2>Mulai dari yang Anda butuhkan</h2></div></div>
         <div class="public-service-grid">
             <a class="public-service-card" href="{{ route('public.guide') }}"><span class="public-service-icon"><x-icon name="scale" /></span><strong>Bank sampah</strong><span>Kenali material yang diterima dan cara menyetorkannya.</span><em>Pelajari panduan <x-icon name="arrow-right" /></em></a>
-            <a class="public-service-card" href="{{ route('public.leaderboard') }}"><span class="public-service-icon yellow"><x-icon name="sparkles" /></span><strong>EcoPoints & reward</strong><span>Poin dari kontribusi terverifikasi dapat ditukar dengan reward yang tersedia.</span><em>Lihat peringkat <x-icon name="arrow-right" /></em></a>
+            <a class="public-service-card" href="{{ route('public.leaderboard') }}"><span class="public-service-icon yellow"><x-icon name="sparkles" /></span><strong>EcoPoints & reward</strong><span>Poin dari setoran yang diterima dapat ditukar dengan reward yang tersedia.</span><em>Lihat peringkat <x-icon name="arrow-right" /></em></a>
             <a class="public-service-card" href="{{ route('public.events') }}"><span class="public-service-icon orange"><x-icon name="calendar" /></span><strong>Kegiatan warga</strong><span>Ikuti kerja bakti, pelatihan, dan kegiatan lingkungan.</span><em>Lihat kegiatan <x-icon name="arrow-right" /></em></a>
             <a class="public-service-card" href="{{ route('public.catalog') }}"><span class="public-service-icon brown"><x-icon name="box" /></span><strong>Produk warga</strong><span>Temukan produk hasil pemanfaatan material dan hubungi penjual.</span><em>Buka katalog <x-icon name="arrow-right" /></em></a>
+            <a class="public-service-card" href="{{ route('public.donation') }}"><span class="public-service-icon"><x-icon name="heart" /></span><strong>Donasi & sponsorship</strong><span>Program terbuka untuk donasi masyarakat dan dukungan sponsor.</span><em>Lihat cara mendukung <x-icon name="arrow-right" /></em></a>
         </div>
     </section>
     <section class="public-section public-how">
@@ -50,7 +51,7 @@
             <div><span>01</span><section><strong>Pilah dari rumah</strong><p>Pisahkan kardus, botol, galon, kaleng, dan material lain yang diterima.</p></section></div>
             <div><span>02</span><section><strong>Datang ke bank sampah</strong><p>Petugas memeriksa kondisi material dan menimbang berat yang diterima.</p></section></div>
             <div><span>03</span><section><strong>Pilih jual atau donasi</strong><p>Setoran jual mendapat pembayaran sesuai tarif yang berlaku dan EcoPoints. Donasi material mendapat bonus poin.</p></section></div>
-            <div><span>04</span><section><strong>Pantau catatan kontribusi</strong><p>Setelah diverifikasi, riwayat setoran dan poin dapat dilihat melalui akun warga.</p></section></div>
+            <div><span>04</span><section><strong>Pantau catatan kontribusi</strong><p>Riwayat setoran dan poin dapat dilihat melalui akun warga setelah petugas menyimpan catatan.</p></section></div>
         </div>
     </section>
     <section class="public-section">
@@ -82,8 +83,8 @@
         <div class="grid three">
             @forelse ($products as $product)
                 <article class="card item-card">
-                    @php($photo = match ($product->image_key) { 'bag' => 'images/products/bag.jpg', 'decor' => 'images/products/decor.jpg', default => 'images/products/pot.jpg' })
-                    <div class="item-art product-photo"><img src="{{ asset($photo) }}" alt="Foto {{ $product->name }}"></div>
+                    @php($photo = $product->image_path ? \App\Support\Uploads::url($product->image_path) : asset(match ($product->image_key) { 'bag' => 'images/products/bag.jpg', 'decor' => 'images/products/decor.jpg', default => 'images/products/pot.jpg' }))
+                    <div class="item-art product-photo"><img src="{{ $photo }}" alt="Foto {{ $product->name }}"></div>
                     <div>
                         <div class="row between"><span class="badge info">Tersedia</span><span class="small muted">Stok {{ $product->stock }}</span></div>
                         <h3 class="gap-top">{{ $product->name }}</h3>
@@ -124,6 +125,10 @@
             <a class="btn primary" href="{{ route('login') }}">Masuk ke akun</a>
             <a class="btn outline" href="{{ route('register') }}">Daftar sebagai warga</a>
         </div>
+    </section>
+    <section class="public-section">
+        <div class="section-heading-row"><div><div class="eyebrow">Terbuka untuk umum</div><h2>Donasi dan sponsorship</h2></div></div>
+        @include('pages.public._donation-channel', ['channel' => $channel])
     </section>
     <div class="public-contact-strip">
         <div><x-icon name="map-pin" /><span><strong>RW 13, Kelurahan Babakan Sari</strong><small>Kecamatan Kiaracondong, Kota Bandung</small></span></div>

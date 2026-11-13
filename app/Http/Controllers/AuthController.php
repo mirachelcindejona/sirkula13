@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ResidentProfile;
+use App\Support\Home;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
@@ -59,7 +60,7 @@ class AuthController extends Controller
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        return redirect()->intended(route('app.home'));
+        return redirect()->intended(route(Home::routeName($user)));
     }
 
     public function registerForm(): View

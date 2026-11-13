@@ -28,9 +28,9 @@
         @forelse ($products as $product)
             @php($reserved = $product->orders->whereNotIn('status', ['cancelled', 'declined', 'completed'])->sum('quantity'))
             @php($available = max(0, (int) $product->stock - (int) $reserved))
-            @php($photo = match ($product->image_key) { 'bag' => 'images/products/bag.jpg', 'decor' => 'images/products/decor.jpg', default => 'images/products/pot.jpg' })
+            @php($photo = $product->image_path ? \App\Support\Uploads::url($product->image_path) : asset(match ($product->image_key) { 'bag' => 'images/products/bag.jpg', 'decor' => 'images/products/decor.jpg', default => 'images/products/pot.jpg' }))
             <article class="card item-card">
-                <div class="item-art product-photo"><img src="{{ asset($photo) }}" alt="Foto {{ $product->name }}"></div>
+                <div class="item-art product-photo"><img src="{{ $photo }}" alt="Foto {{ $product->name }}"></div>
                 <div>
                     <div class="row between">
                         <span class="badge info">{{ $available > 0 ? 'Tersedia' : 'Konfirmasi stok' }}</span>

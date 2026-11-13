@@ -1,13 +1,11 @@
+@php($reward = $reward ?? null)
 <div class="form-grid">
     <div class="field">
         <label for="reward-code">Kode <span class="required">*</span></label>
         <input id="reward-code" name="code" value="{{ old('code', $reward->code ?? '') }}" required maxlength="30">
         @error('code')<div class="field-hint">{{ $message }}</div>@enderror
     </div>
-    <div class="field">
-        <label for="reward-icon">Ikon</label>
-        <input id="reward-icon" name="icon" value="{{ old('icon', $reward->icon ?? '🎁') }}" maxlength="30">
-    </div>
+    <x-photo-field id="reward-photo" name="photo" label="Foto reward" :current="$reward?->image_path ? \App\Support\Uploads::url($reward->image_path) : null" />
     <div class="field full">
         <label for="reward-name">Nama <span class="required">*</span></label>
         <input id="reward-name" name="name" value="{{ old('name', $reward->name ?? '') }}" required maxlength="150">
@@ -19,7 +17,8 @@
     </div>
     <div class="field">
         <label for="reward-points">Poin yang dibutuhkan <span class="required">*</span></label>
-        <input id="reward-points" type="number" min="1" name="points_required" value="{{ old('points_required', $reward->points_required ?? 100) }}" required>
+        <input id="reward-points" type="number" min="2" step="2" name="points_required" value="{{ old('points_required', $reward->points_required ?? 100) }}" required>
+        <div class="field-hint">Poin harus bilangan genap, tanpa koma.</div>
     </div>
     <div class="field">
         <label for="reward-stock">Stok <span class="required">*</span></label>

@@ -9,6 +9,7 @@
 @section('content')
     <div class="callout"><x-icon name="user" /><div><strong>Periksa potensi duplikasi sebelum menyetujui</strong>Jika warga sudah punya ID, jangan membuat saldo kedua. Akun hanya disetujui oleh pengurus, bukan oleh pemilik akun sendiri.</div></div>
     <div class="card gap-top">
+        <x-table-toolbar placeholder="Cari nama, email, atau nomor HP" />
         @forelse ($users as $user)
             <div class="list-row">
                 <div class="list-icon"><x-icon name="user" /></div>

@@ -29,7 +29,7 @@ return new class extends Migration
             $table->boolean('accepted')->default(true);
             $table->text('quality_note')->nullable();
             $table->boolean('resident_choice_confirmed')->default(false);
-            $table->string('status', 30)->default('draft')->index();
+            $table->string('status', 30)->default('verified')->index();
             $table->string('source', 20)->default('online');
             $table->string('offline_transaction_id', 100)->nullable()->unique();
             $table->text('note')->nullable();

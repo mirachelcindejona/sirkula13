@@ -4,7 +4,7 @@
 @section('eyebrow', 'Admin')
 @section('subtitle', 'Reward ditukar dengan EcoPoints, terpisah dari produk yang dijual warga.')
 @section('content')
-    <form method="POST" action="{{ route('admin.rewards.store') }}" class="card">
+    <form method="POST" action="{{ route('admin.rewards.store') }}" class="card" enctype="multipart/form-data">
         @csrf
         @include('pages.admin.rewards._form')
         <div class="form-actions">

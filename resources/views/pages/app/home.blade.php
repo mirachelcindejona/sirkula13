@@ -69,25 +69,24 @@
         </div>
     @elseif ($role === 'operator-bank-sampah')
         <div class="grid three gap-top">
-            <div class="card kpi"><div class="kpi-icon"><x-icon name="scale" /></div><div class="kpi-value">{{ $pendingDeposits }}</div><div class="kpi-label">Setoran menunggu</div><div class="kpi-note">Perlu diperiksa</div></div>
-            <div class="card kpi"><div class="kpi-icon"><x-icon name="box" /></div><div class="kpi-value">{{ number_format($stockKg, 1, ',', '.') }} kg</div><div class="kpi-label">Total stok material</div><div class="kpi-note">Stok terverifikasi</div></div>
-            <div class="card kpi"><div class="kpi-icon"><x-icon name="wallet" /></div><div class="kpi-value">{{ $unpaidPayouts }}</div><div class="kpi-label">Pembayaran warga tertunda</div><div class="kpi-note">Lihat status di buku pembayaran</div></div>
+            <div class="card kpi"><div class="kpi-icon"><x-icon name="scale" /></div><div class="kpi-value">{{ $todayDeposits }}</div><div class="kpi-label">Setoran hari ini</div><div class="kpi-note">Langsung masuk catatan</div></div>
+            <div class="card kpi"><div class="kpi-icon"><x-icon name="box" /></div><div class="kpi-value">{{ number_format($stockKg, 1, ',', '.') }} kg</div><div class="kpi-label">Total stok material</div><div class="kpi-note">Setoran diterima dikurangi keluar</div></div>
+            <div class="card kpi"><div class="kpi-icon"><x-icon name="wallet" /></div><div class="kpi-value">{{ $unpaidPayouts }}</div><div class="kpi-label">Tabungan belum cair</div><div class="kpi-note">Dicairkan saat jadwal pembagian</div></div>
         </div>
         <div class="grid two gap-top">
             <div class="card">
                 <div class="card-head"><div><h3 class="card-title">Pekerjaan utama</h3><p class="card-subtitle">Pilih tindakan sesuai proses yang sedang berjalan.</p></div></div>
                 <div class="stack">
                     <a class="btn primary block" href="{{ route('bank.deposits.create') }}"><x-icon name="scale" /> Catat setoran warga</a>
-                    <a class="btn secondary block" href="{{ route('bank.verify') }}"><x-icon name="check" /> Periksa setoran dari petugas lain</a>
+                    <a class="btn secondary block" href="{{ route('bank.records') }}"><x-icon name="receipt" /> Lihat catatan setoran</a>
                     <a class="btn outline block" href="{{ route('bank.inventory') }}"><x-icon name="box" /> Catat material keluar</a>
-                    <a class="btn outline block" href="{{ route('bank.residents') }}"><x-icon name="user-plus" /> Bantu warga tanpa HP</a>
+                    <a class="btn outline block" href="{{ route('finance.payouts') }}"><x-icon name="wallet" /> Pencairan setoran</a>
                 </div>
             </div>
             <div class="card">
                 <div class="card-head"><h3 class="card-title">Ingat sebelum menyimpan</h3></div>
                 <div class="stack">
-                    <div class="callout warning"><x-icon name="alert" /><div><strong>Jangan finalkan sendiri</strong>Pembuat dan pemeriksa harus berbeda. Jika petugas yang sama membuat transaksi, minta petugas lain memeriksa.</div></div>
-                    <div class="callout"><x-icon name="wallet" /><div><strong>Uang bukan poin</strong>Setoran Jual menghitung nilai rupiah, tetapi status Lunas hanya setelah uang benar-benar dibayarkan dan dicatat Bendahara.</div></div>
+                    <div class="callout"><x-icon name="wallet" /><div><strong>Uang ditabung dulu</strong>Setoran jual tidak dibayar di tempat. Nilainya masuk tabungan dan dicairkan saat jadwal pembagian.</div></div>
                 </div>
             </div>
         </div>
@@ -95,12 +94,12 @@
         <div class="grid three gap-top">
             <div class="card kpi"><div class="kpi-icon"><x-icon name="calendar" /></div><div class="kpi-value">{{ $publishedEvents }}</div><div class="kpi-label">Kegiatan tayang</div><div class="kpi-note">Bisa dilihat warga</div></div>
             <div class="card kpi"><div class="kpi-icon"><x-icon name="check" /></div><div class="kpi-value">{{ $pendingAttendance }}</div><div class="kpi-label">Kehadiran menunggu</div><div class="kpi-note">Perlu diverifikasi</div></div>
-            <div class="card kpi"><div class="kpi-icon"><x-icon name="box" /></div><div class="kpi-value">{{ $draftCatalog }}</div><div class="kpi-label">Draft katalog</div><div class="kpi-note">Menunggu persetujuan</div></div>
+            <div class="card kpi"><div class="kpi-icon"><x-icon name="box" /></div><div class="kpi-value">{{ $draftCatalog }}</div><div class="kpi-label">Katalog belum tayang</div><div class="kpi-note">Masih draf</div></div>
         </div>
         <div class="grid two gap-top">
             <div class="card">
                 <h3 class="card-title">Kelola aktivitas warga</h3>
-                <p class="card-subtitle">Kehadiran dan tugas punya proses verifikasi masing-masing.</p>
+                <p class="card-subtitle">Kehadiran baru memberi poin setelah disahkan.</p>
                 <div class="stack gap-top">
                     <a class="btn primary block" href="{{ route('program.events') }}">Buat kegiatan dan catat kehadiran</a>
                     <a class="btn outline block" href="{{ route('program.catalog') }}">Siapkan produk untuk ditinjau</a>
@@ -111,7 +110,7 @@
     @elseif ($role === 'bendahara')
         <div class="grid three gap-top">
             <div class="card kpi"><div class="kpi-icon"><x-icon name="wallet" /></div><div class="kpi-value">{{ \App\Support\Labels::money($cashBalance) }}</div><div class="kpi-label">Saldo kas tercatat</div><div class="kpi-note">Dari kas masuk dikurangi kas keluar</div></div>
-            <div class="card kpi"><div class="kpi-icon"><x-icon name="receipt" /></div><div class="kpi-value">{{ $unpaidPayouts }}</div><div class="kpi-label">Pembayaran warga</div><div class="kpi-note">Masih dalam alur persetujuan</div></div>
+            <div class="card kpi"><div class="kpi-icon"><x-icon name="receipt" /></div><div class="kpi-value">{{ $unpaidPayouts }}</div><div class="kpi-label">Tabungan warga</div><div class="kpi-note">Belum dicairkan penuh</div></div>
             <div class="card kpi"><div class="kpi-icon"><x-icon name="heart" /></div><div class="kpi-value">{{ $pendingDonationCount }}</div><div class="kpi-label">Donasi menunggu</div><div class="kpi-note">Belum menjadi kas masuk</div></div>
         </div>
         <div class="grid two gap-top">
@@ -125,13 +124,13 @@
                     <a class="btn outline block" href="{{ route('finance.reports') }}">Lihat laporan</a>
                 </div>
             </div>
-            <div class="callout warning"><x-icon name="alert" /><div><strong>Pengeluaran perlu pemisahan tugas</strong>Ajukan transaksi terlebih dahulu. Approver harus berbeda dari pembuat; kas baru berkurang saat pembayaran benar-benar dilakukan.</div></div>
+            <div class="callout"><x-icon name="wallet" /><div><strong>Catatan langsung masuk buku</strong>Pemasukan dan pengeluaran yang sudah terjadi dicatat tanpa antrean persetujuan. Koreksi hanya untuk catatan yang baru dibuat.</div></div>
         </div>
     @else
         <div class="grid three gap-top">
             <div class="card kpi"><div class="kpi-icon"><x-icon name="user" /></div><div class="kpi-value">{{ $pendingApprovals }}</div><div class="kpi-label">Akun menunggu</div><div class="kpi-note">Periksa duplikasi sebelum aktif</div></div>
-            <div class="card kpi"><div class="kpi-icon"><x-icon name="check" /></div><div class="kpi-value">{{ $pendingDeposits }}</div><div class="kpi-label">Setoran menunggu</div><div class="kpi-note">Pastikan pemeriksa berbeda</div></div>
-            <div class="card kpi"><div class="kpi-icon"><x-icon name="clipboard" /></div><div class="kpi-value">{{ $openDecisions }}</div><div class="kpi-label">Keputusan yang perlu ditindaklanjuti</div><div class="kpi-note">Keputusan belum ditandai selesai</div></div>
+            <div class="card kpi"><div class="kpi-icon"><x-icon name="alert" /></div><div class="kpi-value">{{ $held }}</div><div class="kpi-label">Pesanan ditahan</div><div class="kpi-note">Menunggu pemeriksaan</div></div>
+            <div class="card kpi"><div class="kpi-icon"><x-icon name="wallet" /></div><div class="kpi-value">{{ $unpaidPayouts }}</div><div class="kpi-label">Tabungan belum cair</div><div class="kpi-note">Dicairkan saat jadwal pembagian</div></div>
         </div>
         <div class="grid two gap-top">
             <div class="card">
@@ -140,7 +139,7 @@
                 <div class="stack gap-top">
                     <a class="btn primary block" href="{{ route('admin.approvals') }}">Periksa pendaftaran warga</a>
                     <a class="btn secondary block" href="{{ route('admin.tariff') }}">Tinjau harga dan aturan poin</a>
-                    <a class="btn outline block" href="{{ route('admin.publication') }}">Setujui publikasi draft</a>
+                    <a class="btn outline block" href="{{ route('program.events') }}">Kelola kegiatan</a>
                     <a class="btn outline block" href="{{ route('admin.audit') }}">Periksa audit log</a>
                 </div>
             </div>
