@@ -1,58 +1,136 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
-
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+  <img src="public/images/logo.png" width="88" alt="Logo SIRKULA RW 13">
 </p>
 
-## About Laravel
+<h1 align="center">SIRKULA RW 13</h1>
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+<p align="center">
+  Sistem informasi bank sampah dan partisipasi warga<br>
+  RW 13, Kelurahan Babakan Sari, Kecamatan Kiaracondong, Kota Bandung
+</p>
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+SIRKULA mencatat setoran sampah, poin warga, stok material, kas RW, kegiatan, dan donasi dalam satu aplikasi. Warga melihat riwayatnya sendiri. Petugas mengerjakan bagian yang menjadi tugasnya. Halaman publik tetap bisa dibuka tanpa masuk.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Yang dikerjakan aplikasi
 
-## Learning Laravel
+**Bank sampah.** Operator mencatat setoran warga RW 13 atau penyetor dari luar. Jumlah mengikuti satuan jenis material: kg, g, liter, pcs, lembar, atau ikat. Setoran yang diterima langsung masuk catatan, beserta EcoPoints. Material yang ditolak tidak menghasilkan poin dan tidak dibayar. Setoran jual menunggu pencairan. Setoran donasi material memberi bonus poin dan tidak dibayar uang.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+**Stok.** Stok dihitung dari setoran yang diterima dikurangi material yang sudah keluar ke pengepul, produk, atau tujuan lain.
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+**Keuangan.** Bendahara mencairkan tabungan setoran, termasuk pencairan sebagian. Pencairan terakhir dapat dikoreksi dalam 24 jam. Buku kas memisahkan pemasukan dan pengeluaran. Donasi uang baru masuk kas setelah petugas memastikan uangnya diterima. SupportPoints dari donasi uang terpisah dari EcoPoints.
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+**Kegiatan dan produk.** Pengelola membuat kegiatan, mengesahkan kehadiran, menayangkan katalog, dan menindaklanjuti pesanan. Poin kehadiran masuk setelah kehadiran disahkan.
 
-## Agentic Development
+**Admin.** Superadmin menyetujui pendaftaran warga, mengatur hak akses petugas, tarif, jenis material, katalog reward, serta melihat pesanan yang ditahan dan riwayat aktivitas.
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Peran
+
+| Peran | Tugas di aplikasi |
+| --- | --- |
+| Warga | Melihat profil, riwayat setoran, EcoPoints, reward, dan pesanan sendiri |
+| Operator bank sampah | Mencatat setoran, memantau stok, menyerahkan reward, dan mencairkan tabungan |
+| Pengelola kegiatan | Mengelola kegiatan, kehadiran, katalog, dan pesanan |
+| Bendahara | Mengurus pencairan, buku kas, donasi, rekening, QRIS, dan laporan |
+| Superadmin | Mengawasi seluruh modul, akun, tarif, dan audit |
+
+Setelah masuk, tiap peran diarahkan ke beranda sesuai tugasnya.
+
+## Halaman yang terbuka untuk umum
+
+| Halaman | Alamat |
+| --- | --- |
+| Beranda | `/` |
+| Profil RW | `/profil-rw` |
+| Panduan pemilahan | `/panduan` |
+| Kegiatan warga | `/kegiatan` |
+| Katalog produk | `/katalog` |
+| Peringkat | `/peringkat` |
+| Donasi dan dukungan | `/donasi` |
+| Masuk | `/masuk` |
+| Daftar warga | `/daftar` |
+
+Pendaftaran warga memakai email. Akun baru dapat dipakai setelah diperiksa pengurus. Pengunjung yang sudah masuk dan membuka `/` diarahkan ke beranda perannya.
+
+## Menjalankan di komputer
+
+Yang diperlukan:
+
+- PHP 8.3
+- Composer
+- MySQL
+- Node.js, untuk membangun aset bawaan Laravel
+
+Dari folder aplikasi:
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+copy .env.example .env
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Di `.env`, arahkan database ke MySQL lokal. Untuk Laragon, nilai yang biasa dipakai:
 
-## Contributing
+```env
+APP_URL=http://127.0.0.1:8000
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=sirkula13
+DB_USERNAME=root
+DB_PASSWORD=
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Buat database `sirkula13`, lalu siapkan tabel, data awal, dan tautan berkas:
 
-## Code of Conduct
+```bash
+php artisan migrate
+php artisan db:seed
+php artisan storage:link
+php artisan serve
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Buka http://127.0.0.1:8000. `APP_URL` sebaiknya sama dengan alamat yang dibuka di peramban, supaya foto yang disimpan lewat storage tampil.
 
-## Security Vulnerabilities
+`php artisan db:seed` mengisi peran, jenis material, dan data contoh. Seeder contoh menolak berjalan saat `APP_ENV=production`.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Akun contoh
 
-## License
+Akun ini hanya untuk pengembangan. Kata sandinya sama untuk semua akun dan tertulis di `database/seeders/SirkulaDemoSeeder.php`.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Email | Peran | Keadaan |
+| --- | --- | --- |
+| `admin@sirkula.test` | Superadmin | Aktif |
+| `rudi@sirkula.test` | Operator bank sampah | Aktif |
+| `yanti@sirkula.test` | Operator bank sampah | Aktif |
+| `maya@sirkula.test` | Pengelola kegiatan | Aktif |
+| `nisa@sirkula.test` | Pengelola kegiatan | Aktif |
+| `lina@sirkula.test` | Bendahara | Aktif |
+| `sari@sirkula.test` | Warga | Aktif |
+| `budi@sirkula.test` | Warga | Aktif |
+| `diah@sirkula.test` | Warga | Aktif |
+| `rina@sirkula.test` | Warga | Menunggu persetujuan |
+| `deni@sirkula.test` | Warga | Perlu informasi tambahan |
+
+Rekening, kontak donasi, dan gambar QRIS pada data contoh juga ikut terisi, supaya halaman donasi langsung terlihat siap dipakai. Ganti isinya lewat menu **Rekening & QRIS** sebelum aplikasi dipakai sungguhan.
+
+## Foto
+
+Foto setoran, produk, kegiatan, reward, bukti donasi, dan QRIS disimpan di disk `public` (`storage/app/public`). Jenis yang diterima JPG, PNG, dan WEBP, paling besar 2 MB. Setiap unggahan menampilkan pratinjau sebelum disimpan.
+
+## Peta singkat
+
+```text
+app/Http/Controllers     Alur setoran, kas, kegiatan, admin, dan halaman publik
+app/Support              Label, unggahan, navigasi, dan aturan tampilan
+routes/modules           Rute per bagian: publik, akun, bank sampah, kegiatan, keuangan, admin
+resources/views/pages    Halaman Blade
+public/css/sirkula.css   Tampilan aplikasi
+public/js/sirkula-ui.js  Pencarian pada dropdown, pratinjau foto, dan tampilan kata sandi
+database/seeders         Peran, material, dan data contoh
+```
+
+## Uji
+
+```bash
+php artisan test
+```
