@@ -7,6 +7,7 @@
     <div class="card">
         <x-table-toolbar placeholder="Cari kode, donatur, atau tujuan" :filters="[['name' => 'status', 'label' => 'Semua status', 'options' => ['pending_receipt' => 'Menunggu', 'verified' => 'Terverifikasi']]]" />
     </div>
+    <div data-live-results>
     <div class="callout warning gap-top"><x-icon name="alert" /><div><strong>Janji donasi belum masuk kas</strong>SupportPoints baru dicatat setelah penerimaan dikonfirmasi.</div></div>
     <h2 class="section-title">Menunggu pemeriksaan</h2>
     <div class="card">
@@ -46,6 +47,7 @@
             </table>
         </div>
         {{ $donations->links() }}
+    </div>
     </div>
     <dialog id="donation-dialog" class="confirm-dialog">
         <form method="POST" id="donation-verify-form" enctype="multipart/form-data">
@@ -88,14 +90,14 @@
                 proof.required = transfer;
             };
             channel.addEventListener('change', sync);
-            document.querySelectorAll('[data-donation-open]').forEach((button) => {
-                button.addEventListener('click', () => {
-                    form.action = @json(route('finance.donations.verify', ['donation' => '__ID__'])).replace('__ID__', button.dataset.id);
-                    document.getElementById('donation-dialog-title').textContent = button.dataset.name + ' · ' + button.dataset.amount;
-                    form.reset();
-                    sync();
-                    dialog.showModal();
-                });
+            document.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-donation-open]');
+                if (!button) return;
+                form.action = @json(route('finance.donations.verify', ['donation' => '__ID__'])).replace('__ID__', button.dataset.id);
+                document.getElementById('donation-dialog-title').textContent = button.dataset.name + ' · ' + button.dataset.amount;
+                form.reset();
+                sync();
+                dialog.showModal();
             });
             document.getElementById('donation-cancel').addEventListener('click', () => dialog.close());
             sync();

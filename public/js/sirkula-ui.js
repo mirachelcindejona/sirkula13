@@ -235,6 +235,233 @@
         });
     };
 
+    const sanitizeAngka = (value) => {
+        const grouped = String(value).trim().match(/^\d{1,3}(\.\d{3})+$/);
+        const source = grouped ? String(value).replace(/\./g, '') : String(value);
+        let out = '';
+        let comma = false;
+        for (const ch of source) {
+            if (ch >= '0' && ch <= '9') out += ch;
+            else if ((ch === ',' || ch === '.') && !comma) {
+                out += ',';
+                comma = true;
+            }
+        }
+        return out;
+    };
+
+    const prepareDecimal = (input) => {
+        if (!(input instanceof HTMLInputElement) || input.dataset.angka === '1' || input.type !== 'number') return;
+        input.dataset.angka = '1';
+        input.type = 'text';
+        input.inputMode = 'decimal';
+        input.autocomplete = 'off';
+        input.spellcheck = false;
+        if (input.value) input.value = sanitizeAngka(input.value);
+        input.addEventListener('beforeinput', (event) => {
+            if (event.data == null) return;
+            const clean = sanitizeAngka(event.data);
+            if (clean === event.data) return;
+            event.preventDefault();
+            const start = input.selectionStart ?? input.value.length;
+            const end = input.selectionEnd ?? start;
+            const merged = sanitizeAngka(input.value.slice(0, start) + clean + input.value.slice(end));
+            input.value = merged;
+            const pos = Math.min(merged.length, start + clean.length);
+            input.setSelectionRange(pos, pos);
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+        });
+        input.addEventListener('input', () => {
+            const clean = sanitizeAngka(input.value);
+            if (clean === input.value) return;
+            const pos = input.selectionStart ?? clean.length;
+            input.value = clean;
+            input.setSelectionRange(Math.min(clean.length, pos), Math.min(clean.length, pos));
+        });
+    };
+
+    const decimalMessage = (field) => {
+        const raw = field.value.trim();
+        if (raw === '') return field.required ? 'Bagian ini wajib diisi.' : '';
+        if (!/^\d+(,\d+)?$/.test(raw)) return 'Isi angka. Untuk desimal, pakai koma.';
+        const value = Number(raw.replace(',', '.'));
+        const min = field.getAttribute('min');
+        const max = field.getAttribute('max');
+        const step = field.getAttribute('step');
+        if (min !== null && min !== '' && value < Number(min)) return 'Angkanya masih kurang.';
+        if (max !== null && max !== '' && value > Number(max)) return 'Angkanya melebihi batas.';
+        const stepNum = step && step !== 'any' ? Number(step) : null;
+        if (raw.includes(',') && (stepNum === null || stepNum >= 1) && !Number.isInteger(value)) return 'Isi angka bulat, tanpa koma.';
+        if (stepNum) {
+            const base = min !== null && min !== '' ? Number(min) : 0;
+            const scale = 1000;
+            const scaled = Math.round((value - base) * scale);
+            const stepScaled = Math.round(stepNum * scale);
+            if (stepScaled > 0 && scaled % stepScaled !== 0) return 'Angkanya belum sesuai kelipatan.';
+        }
+        return '';
+    };
+
+    const liveFormSelector = 'form.table-search, form[data-live-search]';
+    let listingToken = 0;
+    let listingControl = null;
+
+    const labelCombo = (select) => {
+        const button = select.closest('.combo')?.querySelector('.combo-button');
+        if (!button) return;
+        const selected = select.selectedOptions[0];
+        button.textContent = selected?.textContent?.trim() || 'Pilih';
+        button.classList.toggle('is-placeholder', !select.value);
+    };
+
+    const hasElementAfter = (form) => {
+        let sibling = form.nextSibling;
+        while (sibling) {
+            if (sibling.nodeType === 1) return true;
+            sibling = sibling.nextSibling;
+        }
+        return false;
+    };
+
+    const resultsOf = (form) => {
+        const card = form.closest('.card') || form;
+        const nested = card !== form && card.contains(form);
+        if (nested && hasElementAfter(form)) return { mode: 'tail', card, form };
+        const next = card.nextElementSibling;
+        if (!next) return null;
+        if (next.matches('[data-live-results]') || next.querySelector('.table-wrap, nav.pager')) return { mode: 'card', card: next, form };
+        return null;
+    };
+
+    const syncLiveForm = (current, incoming) => {
+        [...current.elements].forEach((field) => {
+            if (!field.name || field.type === 'hidden' || field.type === 'submit' || field.type === 'button' || field === document.activeElement) return;
+            const match = incoming.elements.namedItem(field.name);
+            const source = match instanceof RadioNodeList ? null : match;
+            if (!source || !('value' in source) || field.value === source.value) return;
+            field.value = source.value;
+            if (field.tagName === 'SELECT') labelCombo(field);
+        });
+    };
+
+    const mountListing = (node) => {
+        node.querySelectorAll('select').forEach(enhanceSelect);
+        node.querySelectorAll('input[type="number"]').forEach(prepareDecimal);
+    };
+
+    const swapListing = (currentHost, incomingHost) => {
+        syncLiveForm(currentHost.form, incomingHost.form);
+        if (currentHost.mode === 'tail') {
+            while (currentHost.form.nextSibling) currentHost.form.nextSibling.remove();
+            const nodes = [];
+            let sibling = incomingHost.form.nextSibling;
+            while (sibling) {
+                nodes.push(sibling);
+                sibling = sibling.nextSibling;
+            }
+            nodes.forEach((node) => currentHost.form.parentNode.appendChild(document.importNode(node, true)));
+            mountListing(currentHost.form.parentNode);
+            return;
+        }
+        const copy = document.importNode(incomingHost.card, true);
+        currentHost.card.replaceWith(copy);
+        mountListing(copy);
+    };
+
+    const refreshListing = async (form, url) => {
+        const host = resultsOf(form);
+        if (!host) {
+            window.location.assign(url);
+            return;
+        }
+        const token = ++listingToken;
+        listingControl?.abort();
+        listingControl = new AbortController();
+        const x = window.scrollX;
+        const y = window.scrollY;
+        try {
+            const response = await fetch(url, {
+                signal: listingControl.signal,
+                credentials: 'same-origin',
+                headers: { Accept: 'text/html', 'X-Requested-With': 'XMLHttpRequest' },
+            });
+            if (token !== listingToken) return;
+            const finalUrl = new URL(response.url, window.location.href);
+            if (!response.ok || finalUrl.pathname.endsWith('/masuk')) {
+                window.location.assign(finalUrl.pathname.endsWith('/masuk') ? response.url : url);
+                return;
+            }
+            const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+            if (token !== listingToken) return;
+            const forms = [...document.querySelectorAll(liveFormSelector)];
+            const incomingForm = [...doc.querySelectorAll(liveFormSelector)][forms.indexOf(form)];
+            const incomingHost = incomingForm ? resultsOf(incomingForm) : null;
+            if (!incomingHost) throw new Error('missing');
+            swapListing(host, incomingHost);
+            history.replaceState(null, '', url);
+            window.scrollTo(x, y);
+        } catch (error) {
+            if (error?.name === 'AbortError') return;
+            window.location.assign(url);
+        }
+    };
+
+    const listingUrl = (form) => {
+        const url = new URL(form.getAttribute('action') || window.location.href, window.location.href);
+        const params = new URLSearchParams(new FormData(form));
+        if (!form.classList.contains('pager-size')) params.delete('page');
+        [...params.keys()].forEach((key) => {
+            if (params.get(key) === '') params.delete(key);
+        });
+        url.search = params.toString();
+        return url;
+    };
+
+    const liveFormFrom = (node) => {
+        const region = node.closest('[data-live-results]');
+        const regionCard = region?.previousElementSibling;
+        if (regionCard?.matches?.(liveFormSelector)) return regionCard;
+        const regionForm = regionCard?.querySelector?.(liveFormSelector);
+        if (regionForm) return regionForm;
+        const card = node.closest('.card');
+        if (!card) return null;
+        const inside = card.querySelector(liveFormSelector);
+        if (inside) return inside;
+        const previous = card.previousElementSibling;
+        if (previous?.matches?.(liveFormSelector)) return previous;
+        return previous?.querySelector?.(liveFormSelector) || null;
+    };
+
+    document.addEventListener('submit', (event) => {
+        const form = event.target;
+        if (!(form instanceof HTMLFormElement)) return;
+        const live = form.matches(liveFormSelector) || form.classList.contains('pager-size');
+        if (!live || (form.getAttribute('method') || 'get').toLowerCase() !== 'get') return;
+        event.preventDefault();
+        event.stopPropagation();
+        const owner = form.matches(liveFormSelector) ? form : liveFormFrom(form);
+        if (!owner) {
+            window.location.assign(listingUrl(form));
+            return;
+        }
+        refreshListing(owner, listingUrl(form.classList.contains('pager-size') ? form : owner));
+    }, true);
+
+    document.addEventListener('click', (event) => {
+        const link = event.target.closest('a');
+        if (!link || link.target || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        const inPager = link.closest('nav.pager');
+        const inSearch = link.closest(liveFormSelector);
+        if (!inPager && !inSearch) return;
+        const url = new URL(link.href, window.location.href);
+        if (url.origin !== window.location.origin) return;
+        const form = inSearch ? link.closest(liveFormSelector) : liveFormFrom(link);
+        if (!form) return;
+        event.preventDefault();
+        event.stopPropagation();
+        refreshListing(form, url);
+    }, true);
+
     document.addEventListener('submit', (event) => {
         const form = event.target;
         if (!(form instanceof HTMLFormElement)) return;
@@ -249,8 +476,14 @@
             showFieldError(confirm, 'Ulangan kata sandi belum sama.');
             blocked = true;
         }
+        form.querySelectorAll('[data-angka]').forEach((field) => {
+            const message = decimalMessage(field);
+            if (!message) return;
+            showFieldError(field, message);
+            blocked = true;
+        });
         form.querySelectorAll('input, select, textarea').forEach((field) => {
-            if (field.disabled || field.type === 'hidden' || (field === confirm && password && password.value !== confirm.value)) return;
+            if (field.disabled || field.type === 'hidden' || field.dataset.angka === '1' || (field === confirm && password && password.value !== confirm.value)) return;
             if (!field.checkValidity()) {
                 showFieldError(field, fieldMessage(field));
                 blocked = true;
@@ -260,7 +493,11 @@
             event.preventDefault();
             event.stopPropagation();
             form.querySelector('.is-invalid')?.focus();
+            return;
         }
+        form.querySelectorAll('[data-angka]').forEach((field) => {
+            field.value = field.value.replace(',', '.');
+        });
     }, true);
 
     document.addEventListener('input', (event) => {
@@ -274,5 +511,6 @@
     passwordToggles();
     photoBoxes();
     document.querySelectorAll('select').forEach(enhanceSelect);
+    document.querySelectorAll('input[type="number"]').forEach(prepareDecimal);
     formErrors();
 })();

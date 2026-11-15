@@ -36,7 +36,7 @@
     @if ($role === 'warga')
         <div class="grid three home-stats gap-top">
             <div class="card kpi"><div class="kpi-icon"><x-icon name="sparkles" /></div><div class="kpi-value">{{ number_format($profile?->availablePoints() ?? 0, 0, ',', '.') }}</div><div class="kpi-label">EcoPoints tersedia</div><div class="kpi-note">Untuk reward</div></div>
-            <div class="card kpi"><div class="kpi-icon"><x-icon name="award" /></div><div class="kpi-value">{{ number_format($profile?->earnedPoints() ?? 0, 0, ',', '.') }}</div><div class="kpi-label">Total terkumpul</div><div class="kpi-note">Rank {{ $profile?->rank()['name'] ?? '—' }}</div></div>
+            <div class="card kpi"><div class="kpi-icon"><x-icon name="award" /></div><div class="kpi-value">{{ number_format($profile?->earnedPoints() ?? 0, 0, ',', '.') }}</div><div class="kpi-label">Total terkumpul</div><div class="kpi-note"><span>Rank {{ $profile?->rank()['name'] ?? '—' }}</span> <x-rank-guide :current="$profile?->rank()['name'] ?? null" /></div></div>
             <div class="card kpi"><div class="kpi-icon"><x-icon name="scale" /></div><div class="kpi-value">{{ $deposits->count() }}</div><div class="kpi-label">Setoran</div><div class="kpi-note">Riwayat setoran</div></div>
         </div>
         <div class="grid two gap-top">

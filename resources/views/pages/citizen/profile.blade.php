@@ -38,7 +38,7 @@
     <div class="grid three">
         <div class="card kpi"><div class="kpi-icon"><x-icon name="award" /></div><div class="kpi-value">{{ number_format($totals, 0, ',', '.') }}</div><div class="kpi-label">Total EcoPoints</div><div class="kpi-note">Untuk penentuan rank</div></div>
         <div class="card kpi"><div class="kpi-icon"><x-icon name="sparkles" /></div><div class="kpi-value">{{ number_format($balance, 0, ',', '.') }}</div><div class="kpi-label">Saldo poin</div><div class="kpi-note">Sebelum reservasi reward</div></div>
-        <div class="card kpi"><div class="kpi-icon"><x-icon name="award" /></div><div class="kpi-value">{{ $rank['name'] ?? '—' }}</div><div class="kpi-label">Rank saat ini</div><div class="kpi-note">Tidak turun saat poin ditukar</div></div>
+        <div class="card kpi"><div class="kpi-icon"><x-icon name="award" /></div><div class="kpi-value">{{ $rank['name'] ?? '—' }}</div><div class="kpi-label">Rank saat ini</div><div class="kpi-note"><span>Tidak turun saat poin ditukar</span> <x-rank-guide :current="$rank['name'] ?? null" /></div></div>
     </div>
     <div class="callout warning gap-top"><x-icon name="shield" /><div><strong>Jaga data akun</strong>Gunakan akun sendiri. Jangan membagikan akun pengelola atau menganggap ID/QR sebagai kata sandi. Perubahan role hanya dilakukan Superadmin sesuai penugasan RW.</div></div>
 @endsection

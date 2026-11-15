@@ -65,13 +65,13 @@
             const dialog = document.getElementById('hold-dialog');
             const form = document.getElementById('hold-form');
             const title = document.getElementById('hold-title');
-            document.querySelectorAll('[data-hold-open]').forEach((button) => {
-                button.addEventListener('click', () => {
-                    form.action = button.dataset.action;
-                    title.textContent = 'Tahan pesanan ' + button.dataset.code;
-                    form.querySelector('[name="reason"]').value = '';
-                    dialog.showModal();
-                });
+            document.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-hold-open]');
+                if (!button) return;
+                form.action = button.dataset.action;
+                title.textContent = 'Tahan pesanan ' + button.dataset.code;
+                form.querySelector('[name="reason"]').value = '';
+                dialog.showModal();
             });
             document.getElementById('hold-cancel').addEventListener('click', () => dialog.close());
         })();

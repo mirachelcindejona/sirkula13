@@ -8,7 +8,7 @@
     <a href="{{ route('admin.materials.create') }}" class="btn primary">Tambah material</a>
 @endsection
 @section('content')
-    <form method="GET" class="card">
+    <form method="GET" class="card" data-live-search>
         <div class="form-grid">
             <div class="field">
                 <label for="material-search">Cari nama atau kode</label>

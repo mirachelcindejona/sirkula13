@@ -11,6 +11,7 @@
     <div class="card">
         <x-table-toolbar placeholder="Cari nama atau kode reward" :filters="[['name' => 'status', 'label' => 'Semua status', 'options' => ['active' => 'Aktif', 'inactive' => 'Nonaktif']]]" />
     </div>
+    <div data-live-results>
     <div class="grid three gap-top">
         @forelse ($rewards as $reward)
             <div class="card item-card">
@@ -36,4 +37,5 @@
         @endforelse
     </div>
     {{ $rewards->links() }}
+    </div>
 @endsection

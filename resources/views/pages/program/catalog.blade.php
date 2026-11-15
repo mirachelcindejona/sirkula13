@@ -10,6 +10,7 @@
     <div class="card">
         <x-table-toolbar placeholder="Cari nama produk atau penjual" :filters="[['name' => 'status', 'label' => 'Semua status', 'options' => ['published' => 'Tayang', 'draft' => 'Draft']]]" />
     </div>
+    <div data-live-results>
     <div class="product-manage-grid gap-top">
         @forelse ($products as $product)
             @php($photo = $product->image_path ? \App\Support\Uploads::url($product->image_path) : asset(match ($product->image_key) { 'bag' => 'images/products/bag.jpg', 'decor' => 'images/products/decor.jpg', default => 'images/products/pot.jpg' }))
@@ -30,4 +31,5 @@
         @endforelse
     </div>
     {{ $products->links() }}
+    </div>
 @endsection

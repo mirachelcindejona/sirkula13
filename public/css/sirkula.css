@@ -3194,6 +3194,9 @@ table.data-table td {
     visibility: hidden;
     pointer-events: none;
 }
+html.splash-skip #sirkula-splash {
+    display: none !important;
+}
 .splash-card {
     width: min(460px, calc(100% - 32px));
     text-align: center;
@@ -3599,3 +3602,143 @@ table.data-table td {
         grid-template-columns: minmax(0, 1fr);
     }
 }
+.kpi-note:has(.rank-info),
+.card-tools {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.rank-badge .rank-info {
+    width: 22px;
+    height: 22px;
+    margin-left: 2px;
+    border-color: transparent;
+    background: rgba(255, 255, 255, 0.72);
+    color: var(--green-deep);
+}
+.rank-info {
+    width: 28px;
+    height: 28px;
+    border: 1px solid #d5e0c8;
+    border-radius: 999px;
+    background: #f4f8ee;
+    color: var(--green-deep);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+.rank-info svg {
+    width: 15px;
+    height: 15px;
+}
+.rank-dialog {
+    width: min(560px, calc(100% - 28px));
+    max-height: calc(100vh - 32px);
+    overflow: auto;
+    border: 0;
+    border-radius: 24px;
+    padding: 22px;
+    color: var(--ink);
+    background:
+        radial-gradient(circle at 100% 0%, rgba(217, 165, 0, 0.18), transparent 34%),
+        linear-gradient(180deg, #fff, #f7faf3);
+    box-shadow: 0 24px 60px rgba(20, 30, 15, 0.22);
+}
+.rank-dialog::backdrop {
+    background: rgba(24, 31, 18, 0.46);
+}
+.rank-dialog-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+.rank-dialog-head h3 {
+    margin: 4px 0 0;
+    font-size: 24px;
+}
+.rank-dialog-head p {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 14px;
+}
+.rank-close {
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 12px;
+    background: #eef3e6;
+    color: var(--ink);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.rank-close svg {
+    width: 18px;
+    height: 18px;
+}
+.rank-ladder {
+    list-style: none;
+    margin: 18px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+}
+.rank-tier {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 16px;
+    background: #f6f7f2;
+}
+.rank-tier .rank-medal {
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    border-radius: 16px;
+    font-size: 24px;
+    background: #fff;
+}
+.rank-tier strong,
+.rank-tier em {
+    display: block;
+}
+.rank-tier strong {
+    font-size: 15px;
+}
+.rank-tier em {
+    margin-top: 2px;
+    color: var(--muted);
+    font-style: normal;
+    font-size: 13px;
+}
+.rank-you {
+    display: none;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: #e7f0d4;
+    color: #3f5a22;
+    font-size: 11px;
+    font-weight: 800;
+}
+.rank-tier.is-current {
+    border-color: #6f8f3a;
+    background: #fff;
+    box-shadow: 0 10px 24px rgba(111, 143, 58, 0.16);
+}
+.rank-tier.is-current .rank-you {
+    display: inline-flex;
+}
+.rank-tier-bronze .rank-medal { background: #f6eadf; }
+.rank-tier-silver .rank-medal { background: #eef1f4; }
+.rank-tier-gold .rank-medal { background: #fbf3d8; }
+.rank-tier-platinum .rank-medal { background: #e7f3fa; }
+.rank-tier-sirkula-champion .rank-medal { background: #e7f2d4; }

@@ -24,7 +24,7 @@
                     <h3 class="card-title">Leaderboard EcoPoints</h3>
                     <p class="card-subtitle">Total poin terkumpul; saldo yang ditukar tidak mengurangi rank.</p>
                 </div>
-                <span class="badge info">Warga RW 13</span>
+                <span class="card-tools"><x-rank-guide /><span class="badge info">Warga RW 13</span></span>
             </div>
             @foreach ($rows as $row)
                 @php($rank = \App\Support\EcoRank::forTotal((int) $row->earned_points))

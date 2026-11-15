@@ -74,17 +74,17 @@
             const dialog = document.getElementById('pay-dialog');
             const form = document.getElementById('pay-form');
             const amount = document.getElementById('pay-amount');
-            document.querySelectorAll('[data-pay-open]').forEach((button) => {
-                button.addEventListener('click', () => {
-                    const remaining = Number(button.dataset.remaining);
-                    form.action = button.dataset.action;
-                    document.getElementById('pay-title').textContent = 'Cairkan ' + button.dataset.code;
-                    document.getElementById('pay-note').textContent = (button.dataset.name || 'Warga') + ' · sisa ' + remaining.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
-                    amount.max = remaining;
-                    amount.value = remaining;
-                    document.getElementById('pay-confirm').checked = false;
-                    dialog.showModal();
-                });
+            document.addEventListener('click', (event) => {
+                const button = event.target.closest('[data-pay-open]');
+                if (!button) return;
+                const remaining = Number(button.dataset.remaining);
+                form.action = button.dataset.action;
+                document.getElementById('pay-title').textContent = 'Cairkan ' + button.dataset.code;
+                document.getElementById('pay-note').textContent = (button.dataset.name || 'Warga') + ' · sisa ' + remaining.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 });
+                amount.max = remaining;
+                amount.value = String(remaining).replace('.', ',');
+                document.getElementById('pay-confirm').checked = false;
+                dialog.showModal();
             });
             document.getElementById('pay-cancel').addEventListener('click', () => dialog.close());
         })();

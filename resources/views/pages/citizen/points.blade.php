@@ -19,7 +19,7 @@
                     <div class="kpi-value">{{ number_format($available, 0, ',', '.') }}</div>
                     <div class="kpi-label">EcoPoints tersedia untuk reward</div>
                 </div>
-                <div class="rank-badge"><span class="rank-medal">{{ $rank['emoji'] }}</span><span>{{ $rank['name'] }}</span></div>
+                <div class="rank-badge"><span class="rank-medal">{{ $rank['emoji'] }}</span><span>{{ $rank['name'] }}</span><x-rank-guide :current="$rank['name']" /></div>
             </div>
             <div class="divider"></div>
             <div class="row between"><span class="small muted">Total poin terkumpul</span><strong>{{ number_format($total, 0, ',', '.') }} poin</strong></div>

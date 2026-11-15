@@ -73,7 +73,7 @@
         (() => {
             const paint = (input) => {
                 const target = document.querySelector('.donate-points[data-material="' + input.dataset.material + '"]');
-                const points = Number(input.value) || 0;
+                const points = Number(String(input.value).replace(',', '.')) || 0;
                 target.textContent = points % 2 === 0
                     ? (points * 1.5).toLocaleString('id-ID', { maximumFractionDigits: 0 })
                     : 'harus genap';
