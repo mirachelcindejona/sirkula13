@@ -29,6 +29,11 @@ class DashboardController extends Controller
             'deposits' => $profile
                 ? Deposit::query()->with('material')->where('resident_profile_id', $profile->id)->latest()->limit(4)->get()
                 : collect(),
+            'shelf' => $role === 'warga'
+                ? Product::query()->with('seller')->where('status', 'published')->where('stock', '>', 0)
+                    ->when($profile?->id, fn ($query) => $query->orderByRaw('CASE WHEN seller_profile_id = ? THEN 1 ELSE 0 END', [$profile->id]))
+                    ->latest('published_at')->latest('id')->limit(3)->get()
+                : collect(),
             'pendingApprovals' => User::query()->whereIn('status', ['pending', 'needs_info'])->count(),
             'todayDeposits' => Deposit::query()->whereDate('created_at', today())->count(),
             'pendingRewards' => RewardRedemption::query()->where('status', 'pending_pickup')->count(),

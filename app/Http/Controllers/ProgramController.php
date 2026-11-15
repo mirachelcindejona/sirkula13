@@ -133,7 +133,7 @@ class ProgramController extends Controller
     {
         $products = Product::query()->with('seller')->latest();
         Listing::search($products, ['name', 'code'], ['seller' => 'full_name']);
-        if ($status = Listing::oneOf('status', ['draft', 'published'])) {
+        if ($status = Listing::oneOf('status', ['draft', 'published', 'archived'])) {
             $products->where('status', $status);
         }
 

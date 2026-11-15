@@ -31,8 +31,8 @@
                     <div class="callout warning account-pending">
                         <x-icon name="alert" />
                         <div>
-                            <strong>Akun belum disetujui pengurus</strong>
-                            Halaman warga bisa dibuka, tetapi ID warga belum terbit. Menyetor, menukar poin, mendaftar kegiatan, dan memesan produk baru bisa setelah akun disetujui.
+                            <strong>Akun Anda sedang dicek pengurus</strong>
+                            Setelah disetujui, Anda bisa setor, tukar poin, ikut kegiatan, dan belanja. Biasanya tidak lama.
                         </div>
                     </div>
                 @endif

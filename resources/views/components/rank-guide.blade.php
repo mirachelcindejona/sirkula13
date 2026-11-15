@@ -13,7 +13,7 @@
             <div>
                 <p class="eyebrow">EcoPoints</p>
                 <h3>Rentang rank warga</h3>
-                <p>Rank mengikuti total poin yang pernah terkumpul. Menukar reward mengurangi saldo, bukan rank.</p>
+                <p>Rank naik mengikuti total poin yang pernah Anda kumpulkan. Rank tetap aman saat poin ditukar dengan hadiah.</p>
             </div>
             <button type="button" class="rank-close" data-rank-close aria-label="Tutup">
                 <x-icon name="x" />

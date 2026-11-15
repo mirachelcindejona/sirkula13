@@ -46,9 +46,9 @@ class Navigation
             if ($user->hasRole('warga')) {
                 $add('Ringkasan', [['route' => 'app.home', 'label' => 'Beranda saya', 'icon' => 'dashboard']], ['standalone' => true]);
                 $add('Akun warga', [
-                    ['route' => 'citizen.profile', 'label' => 'Profil & ID warga', 'icon' => 'user'],
-                    ['route' => 'citizen.deposits', 'label' => 'Riwayat setoran', 'icon' => 'scale'],
-                    ['route' => 'citizen.points', 'label' => 'EcoPoints & reward', 'icon' => 'sparkles'],
+                    ['route' => 'citizen.profile', 'label' => 'Profil saya', 'icon' => 'user'],
+                    ['route' => 'citizen.deposits', 'label' => 'Setoran saya', 'icon' => 'scale'],
+                    ['route' => 'citizen.points', 'label' => 'Poin & hadiah', 'icon' => 'sparkles'],
                     ['route' => 'citizen.products', 'label' => 'Produk saya', 'icon' => 'box'],
                     ['route' => 'citizen.orders', 'label' => 'Pesanan saya', 'icon' => 'receipt'],
                 ], ['icon' => 'user']);
@@ -222,7 +222,7 @@ class Navigation
                 ['route' => 'app.home', 'label' => 'Beranda', 'icon' => 'home'],
                 ['route' => 'citizen.deposits', 'label' => 'Setoran', 'icon' => 'scale'],
                 ['route' => 'public.events', 'label' => 'Kegiatan', 'icon' => 'calendar'],
-                ['route' => 'citizen.points', 'label' => 'EcoPoints', 'icon' => 'sparkles'],
+                ['route' => 'citizen.points', 'label' => 'Poin', 'icon' => 'sparkles'],
             ],
             'operator-bank-sampah' => [
                 ['route' => 'bank.dashboard', 'label' => 'Beranda', 'icon' => 'home'],

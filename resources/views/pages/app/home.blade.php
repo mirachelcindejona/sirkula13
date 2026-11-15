@@ -2,12 +2,48 @@
 @section('title', 'Beranda')
 @section('heading', 'Beranda')
 @section('eyebrow', 'SIRKULA-CERDAS RW 13')
-@section('subtitle', 'Informasi bank sampah dan kegiatan lingkungan RW 13.')
+@section('subtitle', auth()->user()->primaryRoleSlug() === 'warga' ? '' : 'Informasi bank sampah dan kegiatan lingkungan RW 13.')
 @section('content')
     @php
         $first = trim(strtok(auth()->user()->name, '—'));
         $next = $upcomingEvents->first();
     @endphp
+    @if ($role === 'warga')
+        @php
+            $approvedWarga = $profile?->status === 'active';
+            $available = $profile?->availablePoints() ?? 0;
+            $total = $profile?->earnedPoints() ?? 0;
+            $rank = $profile?->rank() ?? \App\Support\EcoRank::forTotal(0);
+            $toNext = $rank['next'] ? max(0, $rank['next'] - $total) : 0;
+            $pct = $rank['next'] ? min(100, (($total - $rank['min']) / max(1, $rank['next'] - $rank['min'])) * 100) : 100;
+        @endphp
+        <section class="warga-hero">
+            <div class="warga-hero-text">
+                <h2>Halo, {{ $first }}!</h2>
+                <p>{{ $approvedWarga ? 'Setor barang bekas, kumpulkan poin, lalu tukar dengan hadiah.' : 'Akun Anda sedang dicek pengurus. Sambil menunggu, lihat-lihat dulu ya.' }}</p>
+                <div class="row">
+                    <a class="btn primary" href="{{ route('citizen.points') }}"><x-icon name="gift" /> Tukar poin</a>
+                    <a class="btn outline" href="{{ route('public.guide') }}"><x-icon name="book" /> Cara memilah</a>
+                </div>
+            </div>
+            <div class="warga-rank">
+                <div class="warga-rank-top">
+                    <span class="warga-rank-medal" aria-hidden="true">{{ $rank['emoji'] }}</span>
+                    <div class="grow">
+                        <span class="warga-rank-label">Rank Anda</span>
+                        <strong>{{ $rank['name'] }}</strong>
+                    </div>
+                    <x-rank-guide :current="$rank['name']" />
+                </div>
+                <div class="warga-rank-bar"><span style="width:{{ number_format($pct, 2, '.', '') }}%"></span></div>
+                <p>{{ $rank['next'] ? number_format($toNext, 0, ',', '.').' poin lagi untuk naik rank' : 'Anda sudah di rank tertinggi. Keren!' }}</p>
+                <div class="warga-rank-stats">
+                    <div><strong>{{ number_format($available, 0, ',', '.') }}</strong><span>Poin siap ditukar</span></div>
+                    <div><strong>{{ number_format($total, 0, ',', '.') }}</strong><span>Total poin</span></div>
+                </div>
+            </div>
+        </section>
+    @else
     <section class="hero">
         <div class="hero-inner">
             <div>
@@ -32,37 +68,65 @@
             <img class="hero-mark" src="{{ asset('images/logo.png') }}" alt="Logo SIRKULA-CERDAS">
         </div>
     </section>
+    @endif
 
     @if ($role === 'warga')
-        <div class="grid three home-stats gap-top">
-            <div class="card kpi"><div class="kpi-icon"><x-icon name="sparkles" /></div><div class="kpi-value">{{ number_format($profile?->availablePoints() ?? 0, 0, ',', '.') }}</div><div class="kpi-label">EcoPoints tersedia</div><div class="kpi-note">Untuk reward</div></div>
-            <div class="card kpi"><div class="kpi-icon"><x-icon name="award" /></div><div class="kpi-value">{{ number_format($profile?->earnedPoints() ?? 0, 0, ',', '.') }}</div><div class="kpi-label">Total terkumpul</div><div class="kpi-note"><span>Rank {{ $profile?->rank()['name'] ?? '—' }}</span> <x-rank-guide :current="$profile?->rank()['name'] ?? null" /></div></div>
-            <div class="card kpi"><div class="kpi-icon"><x-icon name="scale" /></div><div class="kpi-value">{{ $deposits->count() }}</div><div class="kpi-label">Setoran</div><div class="kpi-note">Riwayat setoran</div></div>
+        <div class="quick-tiles gap-top">
+            <a class="quick-tile" href="{{ route('citizen.deposits') }}"><span class="quick-icon"><x-icon name="scale" /></span><strong>Setoran saya</strong><small>{{ $deposits->isEmpty() ? 'Belum ada' : 'Lihat riwayat' }}</small></a>
+            <a class="quick-tile" href="{{ route('citizen.points') }}"><span class="quick-icon"><x-icon name="gift" /></span><strong>Tukar hadiah</strong><small>{{ number_format($available, 0, ',', '.') }} poin</small></a>
+            <a class="quick-tile" href="{{ route('public.events') }}"><span class="quick-icon"><x-icon name="calendar" /></span><strong>Kegiatan</strong><small>Dapat poin</small></a>
+            <a class="quick-tile" href="{{ route('citizen.products') }}"><span class="quick-icon"><x-icon name="box" /></span><strong>Jualan saya</strong><small>Pasang produk</small></a>
         </div>
-        <div class="grid two gap-top">
-            <div class="card">
-                <h3 class="card-title">Yang ingin Anda lakukan?</h3>
-                <p class="card-subtitle">Pilih menu yang dibutuhkan.</p>
-                <div class="grid two home-actions gap-top">
-                    <a class="btn primary block" href="{{ route('citizen.deposits') }}">Lihat setoran dan pembayaran</a>
-                    <a class="btn secondary block" href="{{ route('citizen.points') }}">Tukar EcoPoints dengan reward</a>
-                    <a class="btn outline block" href="{{ route('public.events') }}">Daftar kegiatan warga</a>
-                    <a class="btn outline block" href="{{ route('citizen.products') }}">Kelola produk saya</a>
+
+        <div class="section-head">
+            <div>
+                <h2 class="section-title">Lagi dijual tetangga</h2>
+                <p class="muted small">Barang buatan warga RW 13. Pesan langsung lewat WhatsApp.</p>
+            </div>
+            <a class="btn outline small-btn" href="{{ route('public.catalog') }}">Lihat semua <x-icon name="arrow-right" /></a>
+        </div>
+        @if ($shelf->isEmpty())
+            <div class="card empty-state">
+                <div class="empty-icon"><x-icon name="box" /></div>
+                <h3>Belum ada yang jualan</h3>
+                <p>Jadi yang pertama? Pasang produk buatan Anda, tetangga bisa langsung pesan.</p>
+                <a class="btn primary" href="{{ route('citizen.products') }}">Pasang produk</a>
+            </div>
+        @else
+            <div class="shelf-grid">
+                @foreach ($shelf as $item)
+                    @php($photo = $item->image_path ? \App\Support\Uploads::url($item->image_path) : asset(match ($item->image_key) { 'bag' => 'images/products/bag.jpg', 'decor' => 'images/products/decor.jpg', default => 'images/products/pot.jpg' }))
+                    @php($mine = $profile && (int) $item->seller_profile_id === (int) $profile->id)
+                    <a class="shelf-card" href="{{ route('public.catalog') }}#produk-{{ $item->id }}">
+                        <div class="shelf-photo">
+                            <img src="{{ $photo }}" alt="Foto {{ $item->name }}" loading="lazy">
+                            @if ($mine)<span class="shelf-tag">Produk Anda</span>@endif
+                        </div>
+                        <div class="shelf-body">
+                            <h3>{{ $item->name }}</h3>
+                            <p class="small muted">{{ $item->seller?->full_name ?: ($item->contact_name ?: 'Pengurus RW') }}</p>
+                            <strong class="shelf-price">{{ \App\Support\Labels::money($item->price) }}</strong>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+        @endif
+
+        @if ($next)
+            <div class="next-event gap-top">
+                <span class="next-event-date">
+                    <strong>{{ $next->event_date?->format('d') }}</strong>
+                    <small>{{ $next->event_date?->locale('id')->translatedFormat('M') }}</small>
+                </span>
+                <div class="grow">
+                    <p class="eyebrow">Kegiatan terdekat</p>
+                    <h3>{{ $next->title }}</h3>
+                    <p class="small muted">{{ $next->event_time }} · {{ $next->location }}</p>
                 </div>
+                <span class="point-pill">+{{ $next->attendance_points ?: 50 }} poin</span>
+                <a class="btn primary small-btn" href="{{ route('public.events') }}">Ikut</a>
             </div>
-            <div class="card">
-                <h3 class="card-title">{{ $next ? 'Kegiatan terdekat' : 'Jadwal kegiatan' }}</h3>
-                @if ($next)
-                    <div class="event-status-line gap-top"><span class="badge success">Pendaftaran tersedia</span><span class="point-pill">+{{ $next->attendance_points ?: 50 }} poin</span></div>
-                    <h4>{{ $next->title }}</h4>
-                    <p class="small muted">{{ $next->event_date?->locale('id')->translatedFormat('d M Y') }} · {{ $next->event_time }}<br>{{ $next->location }}</p>
-                    <p class="small">Poin diberikan setelah kehadiran diverifikasi.</p>
-                    <a class="btn outline block gap-top" href="{{ route('public.events') }}">Lihat kegiatan</a>
-                @else
-                    <p class="small muted">Belum ada kegiatan yang diumumkan.</p>
-                @endif
-            </div>
-        </div>
+        @endif
     @elseif ($role === 'operator-bank-sampah')
         <div class="grid three gap-top">
             <div class="card kpi"><div class="kpi-icon"><x-icon name="scale" /></div><div class="kpi-value">{{ $todayDeposits }}</div><div class="kpi-label">Setoran hari ini</div><div class="kpi-note">Langsung masuk catatan</div></div>

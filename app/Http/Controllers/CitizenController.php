@@ -18,6 +18,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class CitizenController extends Controller
@@ -168,6 +169,55 @@ class CitizenController extends Controller
         ]);
 
         return redirect()->route('citizen.products')->with('success', 'Produk Anda diperbarui.');
+    }
+
+    public function archiveProduct(Product $product): RedirectResponse
+    {
+        $profile = $this->approvedProfile();
+        $this->ownProduct($product, $profile);
+        if ($product->status === 'archived') {
+            return back()->with('warning', 'Produk ini sudah diarsipkan.');
+        }
+
+        $before = ['status' => $product->status];
+        $product->update(['status' => 'archived']);
+        Audit::record('Warga mengarsipkan produk '.$product->code, $product, $before, ['status' => 'archived']);
+
+        return back()->with('success', 'Produk diarsipkan dan tidak muncul di katalog. Pesanan yang masih berjalan tetap ada.');
+    }
+
+    public function republishProduct(Product $product): RedirectResponse
+    {
+        $profile = $this->approvedProfile();
+        $this->ownProduct($product, $profile);
+        if (! $product->contact_phone) {
+            return back()->with('warning', 'Isi nomor WhatsApp dulu lewat Ubah, baru tayangkan lagi.');
+        }
+
+        $before = ['status' => $product->status];
+        $product->update(['status' => 'published', 'published_at' => $product->published_at ?: now()]);
+        Audit::record('Warga menayangkan lagi produk '.$product->code, $product, $before, ['status' => 'published']);
+
+        return back()->with('success', 'Produk tayang lagi di katalog.');
+    }
+
+    public function destroyProduct(Product $product): RedirectResponse
+    {
+        $profile = $this->approvedProfile();
+        $this->ownProduct($product, $profile);
+        if ($product->orders()->exists()) {
+            return back()->with('warning', 'Produk ini punya riwayat pesanan, jadi tidak bisa dihapus. Arsipkan saja supaya tidak tayang.');
+        }
+
+        $path = $product->image_path;
+        if ($path && ! str_starts_with($path, 'images/') && ! str_starts_with($path, 'uploads/') && ! str_contains($path, '://')) {
+            Storage::disk('public')->delete($path);
+        }
+        Audit::record('Warga menghapus produk '.$product->code, $product, ['status' => $product->status, 'name' => $product->name], null);
+        $code = $product->code;
+        $product->delete();
+
+        return redirect()->route('citizen.products')->with('success', 'Produk '.$code.' dihapus.');
     }
 
     public function completeSale(ProductOrder $order): RedirectResponse

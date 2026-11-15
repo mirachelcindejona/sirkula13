@@ -1,8 +1,11 @@
 @extends('layouts.app')
-@section('title', 'Transaksi saya')
+@section('title', 'Pesanan saya')
 @section('heading', 'Pesanan saya')
-@section('eyebrow', 'Belanja warga')
-@section('subtitle', 'Pesanan yang Anda buat. Penjual menandai setelah barang diterima.')
+@section('eyebrow', 'Belanja dari tetangga')
+@section('subtitle', 'Barang yang Anda pesan. Lanjutkan obrolan dengan penjual lewat WhatsApp.')
+@section('actions')
+    <a class="btn outline" href="{{ route('public.catalog') }}"><x-icon name="box" /> Cari produk</a>
+@endsection
 @section('content')
     <div class="card">
         <x-table-toolbar placeholder="Cari kode atau nama produk" />
@@ -25,7 +28,7 @@
                             @if ($approved && in_array($order->status, ['awaiting_seller', 'awaiting_buyer'], true))
                                 @php($chat = \App\Support\OrderFlow::link($order))
                                 @if ($chat)
-                                    <a class="btn small-btn outline" href="{{ $chat }}" target="_blank" rel="noopener">Lanjut ke WhatsApp</a>
+                                    <a class="btn small-btn outline" href="{{ $chat }}" target="_blank" rel="noopener">Chat penjual</a>
                                 @endif
                                 <form method="POST" action="{{ route('citizen.orders.cancel', $order) }}" data-confirm="Batalkan pesanan {{ $order->reference_code }}?">
                                     @csrf
@@ -37,7 +40,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="5">Belum ada pesanan.</td></tr>
+                    <tr><td colspan="5">Belum ada pesanan. <a href="{{ route('public.catalog') }}">Lihat produk tetangga</a></td></tr>
                 @endforelse
             </tbody>
         </table>

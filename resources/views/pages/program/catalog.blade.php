@@ -8,7 +8,7 @@
 @endsection
 @section('content')
     <div class="card">
-        <x-table-toolbar placeholder="Cari nama produk atau penjual" :filters="[['name' => 'status', 'label' => 'Semua status', 'options' => ['published' => 'Tayang', 'draft' => 'Draft']]]" />
+        <x-table-toolbar placeholder="Cari nama produk atau penjual" :filters="[['name' => 'status', 'label' => 'Semua status', 'options' => ['published' => 'Tayang', 'draft' => 'Draft', 'archived' => 'Diarsipkan']]]" />
     </div>
     <div data-live-results>
     <div class="product-manage-grid gap-top">

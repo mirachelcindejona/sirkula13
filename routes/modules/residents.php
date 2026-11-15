@@ -16,6 +16,9 @@ Route::middleware(['auth', 'role:warga'])->group(function () {
     Route::post('/produk-saya', [CitizenController::class, 'storeProduct'])->name('citizen.products.store');
     Route::get('/produk-saya/{product}/ubah', [CitizenController::class, 'editProduct'])->name('citizen.products.edit');
     Route::put('/produk-saya/{product}', [CitizenController::class, 'updateProduct'])->name('citizen.products.update');
+    Route::post('/produk-saya/{product}/arsip', [CitizenController::class, 'archiveProduct'])->name('citizen.products.archive');
+    Route::post('/produk-saya/{product}/tayang', [CitizenController::class, 'republishProduct'])->name('citizen.products.publish');
+    Route::delete('/produk-saya/{product}', [CitizenController::class, 'destroyProduct'])->name('citizen.products.destroy');
     Route::post('/produk-saya/pesanan/{order}/selesai', [CitizenController::class, 'completeSale'])->name('citizen.sales.complete');
     Route::post('/produk-saya/pesanan/{order}/batal', [CitizenController::class, 'cancelSale'])->name('citizen.sales.cancel');
 });

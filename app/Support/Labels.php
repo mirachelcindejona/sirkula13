@@ -22,6 +22,7 @@ class Labels
             'verified' => 'Terverifikasi',
             'approved' => 'Disetujui',
             'published' => 'Tayang',
+            'archived' => 'Diarsipkan',
             'rejected' => 'Ditolak',
             'cancelled' => 'Dibatalkan',
             'completed' => 'Selesai',
@@ -57,7 +58,7 @@ class Labels
             'sale' => 'info',
             'registered' => 'success',
             'review' => 'pending',
-            'draft', 'inactive' => 'neutral',
+            'draft', 'inactive', 'archived' => 'neutral',
             default => 'neutral',
         };
     }

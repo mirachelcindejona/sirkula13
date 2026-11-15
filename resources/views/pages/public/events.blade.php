@@ -1,8 +1,8 @@
 @extends(auth()->check() ? 'layouts.app' : 'layouts.public')
 @section('title', 'Kegiatan warga')
 @section('heading', 'Kegiatan warga')
-@section('eyebrow', 'Berpartisipasi bersama')
-@section('subtitle', 'Lihat jadwal, baca informasi, dan daftarkan diri pada kegiatan lingkungan RW 13.')
+@section('eyebrow', 'Ikut, kumpul, dapat poin')
+@section('subtitle', 'Daftar kegiatan yang Anda minati. Poin masuk setelah Anda hadir.')
 @section('content')
     @php
         $user = auth()->user();
@@ -14,16 +14,11 @@
         <div class="public-subpage-head">
             <div class="eyebrow">SIRKULA-CERDAS · RW 13</div>
             <h1>Kegiatan warga</h1>
-            <p>Lihat jadwal, baca informasi, dan daftarkan diri pada kegiatan lingkungan RW 13.</p>
+            <p>Daftar kegiatan yang Anda minati. Poin masuk setelah Anda hadir.</p>
         </div>
     @endguest
 
-    <div class="callout">
-        <x-icon name="calendar" />
-        <div><strong>Pendaftaran kegiatan</strong>Periksa tanggal, waktu, lokasi, kuota, dan ketentuan sebelum mendaftar. Poin hanya diberikan setelah kehadiran diverifikasi.</div>
-    </div>
-
-    <div class="grid two gap-top">
+    <div class="grid two">
         @forelse ($events as $event)
             @php($registration = $profile ? $event->registrations->firstWhere('resident_profile_id', $profile->id) : null)
             <article class="card event-card">
@@ -51,23 +46,23 @@
                         @elseif (! $approved)
                             <button class="btn outline block" type="button" disabled>Bisa daftar setelah akun disetujui</button>
                         @elseif ($registration && $registration->status === 'attended')
-                            <p class="small">Kehadiran sudah dicatat. Poin kegiatan sudah masuk.</p>
+                            <p class="small">Terima kasih sudah hadir. Poinnya sudah masuk.</p>
                         @elseif ($registration)
                             <form method="POST" action="{{ route('public.events.cancel', $event) }}" data-confirm="Batalkan pendaftaran {{ $event->title }}?">
                                 @csrf
                                 <button class="btn danger block" type="submit">Batalkan pendaftaran</button>
                             </form>
                         @else
-                            <form method="POST" action="{{ route('public.events.register', $event) }}" data-confirm="Daftar {{ $event->title }}? Pendaftaran tidak langsung memberi poin.">
+                            <form method="POST" action="{{ route('public.events.register', $event) }}" data-confirm="Daftar {{ $event->title }}? Poin masuk setelah Anda hadir.">
                                 @csrf
-                                <button class="btn primary block" type="submit">Daftar kegiatan</button>
+                                <button class="btn primary block" type="submit">Daftar</button>
                             </form>
                         @endif
                     @endguest
                 </div>
             </article>
         @empty
-            <div class="card empty-state"><h3>Belum ada kegiatan tayang</h3><p>Kegiatan akan tampil setelah disetujui pengelola.</p></div>
+            <div class="card empty-state"><h3>Belum ada kegiatan</h3><p>Nanti kalau ada jadwal baru, langsung muncul di sini.</p></div>
         @endforelse
     </div>
 
@@ -75,7 +70,7 @@
         <h2 class="section-title">Pendaftaran saya</h2>
         <div class="card">
             @if ($mine->isEmpty())
-                <p class="small muted">Belum ada pendaftaran. Pilih kegiatan yang sesuai lalu tekan “Daftar kegiatan”.</p>
+                <p class="small muted">Anda belum daftar kegiatan apa pun.</p>
             @else
                 @foreach ($mine as $registration)
                     <div class="list-row">
